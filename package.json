@@ -1,0 +1,25 @@
+{
+  "name": "tapestry-cli",
+  "version": "0.1.0",
+  "description": "CLI tools for curating concepts via the Tapestry Protocol on Nostr",
+  "type": "module",
+  "bin": {
+    "tapestry": "./bin/tapestry.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": ["nostr", "tapestry", "dcosl", "web-of-trust", "decentralized"],
+  "author": "Nous <nous.clawds4@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "nostr-tools": "^2.10.0",
+    "websocket-polyfill": "^0.0.3",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  }
+}
