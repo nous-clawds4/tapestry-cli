@@ -6,6 +6,7 @@ import { exec as execCb } from 'child_process';
 import { promisify } from 'util';
 import { randomBytes } from 'crypto';
 import { signEvent } from '../lib/signer.js';
+import { addItemCommand } from './concept-add.js';
 
 const execAsync = promisify(execCb);
 const CONTAINER = 'tapestry-tapestry-1';
@@ -27,6 +28,8 @@ export function conceptCommand(program) {
     .action(async (name, opts) => {
       await createConcept(name, opts);
     });
+
+  addItemCommand(concept);
 
   concept
     .command('list')
