@@ -1,0 +1,276 @@
+/**
+ * tapestry normalize — housekeeping commands for concept graph integrity
+ */
+
+import { exec as execCb } from 'child_process';
+import { promisify } from 'util';
+import { randomBytes } from 'crypto';
+import { apiGet } from '../lib/api.js';
+import { signEvent } from '../lib/signer.js';
+
+const execAsync = promisify(execCb);
+const CONTAINER = 'tapestry-tapestry-1';
+
+// Canonical "superset" ListHeader UUID from defaults.conf
+const SUPERSET_CONCEPT_ATAG = '39998:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:21cbf5be-c972-4f45-ae09-c57e165e8cf9';
+
+export function normalizeCommand(program) {
+  const normalize = program
+    .command('normalize')
+    .description('Check and fix concept graph normalization');
+
+  normalize
+    .command('check')
+    .description('Report all normalization violations')
+    .action(async () => {
+      await checkAll();
+    });
+
+  normalize
+    .command('check-supersets')
+    .description('Find ListHeaders missing their Superset node')
+    .action(async () => {
+      await checkSupersets();
+    });
+
+  normalize
+    .command('fix-supersets')
+    .description('Create missing Superset nodes for ListHeaders')
+    .option('--dry-run', 'Show what would be created without doing it')
+    .option('--personal', 'Sign with personal nsec from 1Password')
+    .action(async (opts) => {
+      await fixSupersets(opts);
+    });
+}
+
+/**
+ * Run a Cypher query and return parsed results.
+ */
+async function cypher(query) {
+  const encoded = encodeURIComponent(query);
+  const data = await apiGet(`/api/neo4j/run-query?cypher=${encoded}`);
+  if (!data.success) throw new Error(data.error || 'Query failed');
+  const raw = (data.cypherResults || '').trim();
+  if (!raw) return [];
+  const lines = raw.split('\n');
+  const header = lines[0].split(', ').map(h => h.trim());
+  return lines.slice(1).map(line => {
+    // Simple CSV parse — handles quoted strings
+    const values = [];
+    let current = '';
+    let inQuote = false;
+    for (const ch of line) {
+      if (ch === '"') { inQuote = !inQuote; continue; }
+      if (ch === ',' && !inQuote) { values.push(current.trim()); current = ''; continue; }
+      current += ch;
+    }
+    values.push(current.trim());
+    const row = {};
+    header.forEach((h, i) => { row[h] = values[i] || null; });
+    return row;
+  });
+}
+
+async function checkSupersets() {
+  console.log('\n🔍 Checking for ListHeaders missing Superset nodes...\n');
+
+  const rows = await cypher(
+    "MATCH (h:ListHeader)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'}) " +
+    "WHERE NOT (h)-[:IS_THE_CONCEPT_FOR]->(:Superset) " +
+    "RETURN DISTINCT t.value AS concept, t.value1 AS plural, h.aTag AS aTag, h.pubkey AS pubkey " +
+    "ORDER BY concept"
+  );
+
+  if (rows.length === 0) {
+    console.log('✅ All ListHeaders have Superset nodes. Graph is normalized for Rule 1.\n');
+    return;
+  }
+
+  console.log(`⚠️  ${rows.length} ListHeader(s) missing Superset nodes:\n`);
+  for (const row of rows) {
+    const pub = row.pubkey ? row.pubkey.slice(0, 8) + '...' : '?';
+    console.log(`  ❌ "${row.concept}" (${row.plural || '?'}) — by ${pub}`);
+  }
+  console.log(`\nRun 'tapestry normalize fix-supersets' to create the missing nodes.\n`);
+}
+
+async function fixSupersets(opts) {
+  console.log('\n🔧 Fixing missing Superset nodes...\n');
+
+  const rows = await cypher(
+    "MATCH (h:ListHeader)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'}) " +
+    "WHERE NOT (h)-[:IS_THE_CONCEPT_FOR]->(:Superset) " +
+    "RETURN DISTINCT t.value AS concept, t.value1 AS plural, h.aTag AS aTag, h.pubkey AS pubkey " +
+    "ORDER BY concept"
+  );
+
+  if (rows.length === 0) {
+    console.log('✅ Nothing to fix — all ListHeaders already have Superset nodes.\n');
+    return;
+  }
+
+  console.log(`Found ${rows.length} ListHeader(s) needing Superset nodes.\n`);
+
+  if (opts.dryRun) {
+    console.log('🏜️  Dry run — showing what would be created:\n');
+    for (const row of rows) {
+      const plural = row.plural || row.concept + 's';
+      console.log(`  📝 "${row.concept}" → Superset: "the superset of all ${plural}"`);
+      console.log(`     z-tag: ${SUPERSET_CONCEPT_ATAG}`);
+      console.log(`     nodeFrom: <new superset uuid>`);
+      console.log(`     nodeTo: ${row.aTag}`);
+      console.log('');
+    }
+    console.log(`Would create ${rows.length} Superset events + ${rows.length} Relationship events.\n`);
+    return;
+  }
+
+  let created = 0;
+  const events = [];
+
+  for (const row of rows) {
+    const plural = row.plural || row.concept + 's';
+    const supersetName = `the superset of all ${plural}`;
+    const dTag = randomBytes(4).toString('hex');
+
+    console.log(`  📝 "${row.concept}" → "${supersetName}"`);
+
+    // Create the Superset ListItem (kind 39999)
+    const supersetEvent = await signEvent({
+      kind: 39999,
+      tags: [
+        ['d', dTag],
+        ['name', supersetName],
+        ['z', SUPERSET_CONCEPT_ATAG],
+      ],
+      content: '',
+    }, { personal: opts.personal });
+
+    events.push(supersetEvent);
+
+    // Create the IS_THE_CONCEPT_FOR Relationship ListItem (kind 39999)
+    // This connects the ListHeader to its new Superset
+    const supersetATag = `39999:${supersetEvent.pubkey}:${dTag}`;
+    const relDTag = randomBytes(4).toString('hex');
+
+    // The relationship's z-tag points to the canonical "relationship" concept
+    const RELATIONSHIP_CONCEPT_ATAG = '39998:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:c15357e6-6665-45cc-8ea5-0320b8026f05';
+    // UUID for IS_THE_CONCEPT_FOR relationship type
+    const IS_THE_CONCEPT_FOR_UUID = '39999:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:24bc3eb6-fd75-4679-a3d7-d0b1a2a62be8';
+
+    const relEvent = await signEvent({
+      kind: 39999,
+      tags: [
+        ['d', relDTag],
+        ['name', `${row.concept} IS_THE_CONCEPT_FOR ${supersetName}`],
+        ['z', RELATIONSHIP_CONCEPT_ATAG],
+        ['nodeFrom', row.aTag],
+        ['nodeTo', supersetATag],
+        ['relationshipType', 'IS_THE_CONCEPT_FOR'],
+      ],
+      content: '',
+    }, { personal: opts.personal });
+
+    events.push(relEvent);
+    created++;
+    console.log(`     ✅ Superset: ${supersetEvent.id.slice(0, 12)}...`);
+    console.log(`     ✅ Relationship: ${relEvent.id.slice(0, 12)}...`);
+  }
+
+  // Import all events into strfry
+  console.log(`\n  📡 Importing ${events.length} events to strfry...`);
+  const jsonl = events.map(e => JSON.stringify(e)).join('\n');
+  try {
+    // Write to a temp file and pipe it
+    const tmpFile = `/tmp/tapestry_normalize_${Date.now()}.jsonl`;
+    const { writeFileSync } = await import('fs');
+    writeFileSync(tmpFile, jsonl);
+    const { stdout } = await execAsync(
+      `cat ${tmpFile} | docker exec -i ${CONTAINER} strfry import 2>&1`,
+      { timeout: 30000 }
+    );
+    const addedMatch = stdout.match(/(\d+) added/);
+    console.log(`  ✅ ${addedMatch ? addedMatch[1] : events.length} events written to strfry`);
+    // Clean up
+    const { unlinkSync } = await import('fs');
+    unlinkSync(tmpFile);
+  } catch (err) {
+    console.error(`  ❌ strfry import failed: ${err.message}`);
+    return;
+  }
+
+  // Run batch transfer + setup to update Neo4j
+  console.log('\n  📊 Updating Neo4j...');
+  try {
+    await execAsync(
+      `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/batchTransfer.sh`,
+      { timeout: 120000 }
+    );
+    await execAsync(
+      `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/setup.sh`,
+      { timeout: 60000 }
+    );
+    console.log('  ✅ Neo4j updated — labels and relationships applied');
+  } catch (err) {
+    console.error(`  ❌ Neo4j update failed: ${err.message}`);
+  }
+
+  console.log(`\n✨ Created ${created} Superset nodes with IS_THE_CONCEPT_FOR relationships.\n`);
+}
+
+async function checkAll() {
+  console.log('\n🔍 Tapestry Normalization Check\n');
+  console.log('━'.repeat(50));
+
+  // Rule 1: Missing supersets
+  console.log('\nRule 1: Every ListHeader must have a Superset');
+  const missingSupersets = await cypher(
+    "MATCH (h:ListHeader) WHERE NOT (h)-[:IS_THE_CONCEPT_FOR]->(:Superset) RETURN count(h) AS cnt"
+  );
+  const missingCount = parseInt(missingSupersets[0]?.cnt || '0');
+  if (missingCount === 0) {
+    console.log('  ✅ Pass');
+  } else {
+    console.log(`  ❌ ${missingCount} ListHeader(s) missing Superset nodes`);
+  }
+
+  // Rule 2: Orphaned items
+  console.log('\nRule 2: Every ListItem must have a valid parent pointer');
+  const orphans = await cypher(
+    "MATCH (i:ListItem)-[:HAS_TAG]->(z:NostrEventTag {type: 'z'}) " +
+    "WHERE NOT EXISTS { MATCH (h:ListHeader) WHERE h.aTag = z.value } " +
+    "RETURN count(DISTINCT i) AS cnt"
+  );
+  const orphanCount = parseInt(orphans[0]?.cnt || '0');
+  if (orphanCount === 0) {
+    console.log('  ✅ Pass');
+  } else {
+    console.log(`  ❌ ${orphanCount} ListItem(s) with invalid parent references`);
+  }
+
+  // Rule 7: Duplicate concepts (same author, same name)
+  console.log('\nRule 7: No duplicate concepts per author');
+  const dupes = await cypher(
+    "MATCH (h:ListHeader)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'}) " +
+    "WITH h.pubkey AS pubkey, t.value AS name, count(h) AS cnt " +
+    "WHERE cnt > 1 " +
+    "RETURN name, pubkey, cnt"
+  );
+  if (dupes.length === 0) {
+    console.log('  ✅ Pass');
+  } else {
+    console.log(`  ❌ ${dupes.length} duplicate concept(s):`);
+    for (const d of dupes) {
+      console.log(`     "${d.name}" — ${d.cnt}x by ${d.pubkey?.slice(0, 8)}...`);
+    }
+  }
+
+  // Summary
+  const total = missingCount + orphanCount + dupes.length;
+  console.log('\n' + '━'.repeat(50));
+  if (total === 0) {
+    console.log('✅ Graph is fully normalized!\n');
+  } else {
+    console.log(`⚠️  ${total} issue(s) found. Run specific fix commands to resolve.\n`);
+  }
+}
