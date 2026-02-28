@@ -92,7 +92,15 @@ async function runSync(opts) {
       const tagMatch = output.match(/Created (\d+) tag objects/);
       const events = eventMatch ? eventMatch[1] : '?';
       const tags = tagMatch ? tagMatch[1] : '?';
-      console.log(`   ✅ ${events} events → ${tags} tags imported\n`);
+      console.log(`   ✅ ${events} events → ${tags} tags imported`);
+
+      // Run setup.sh to add labels and concept relationships
+      console.log('   🏷️  Labeling nodes and creating relationships...');
+      await execAsync(
+        `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/setup.sh`,
+        { timeout: 60000 }
+      );
+      console.log('   ✅ Labels and relationships applied\n');
     } catch (err) {
       console.error(`   ❌ Import failed: ${err.message}\n`);
     }

@@ -11,6 +11,7 @@ import { Command } from 'commander';
 import { statusCommand } from '../src/commands/status.js';
 import { queryCommand } from '../src/commands/query.js';
 import { syncCommand } from '../src/commands/sync.js';
+import { conceptCommand } from '../src/commands/concept.js';
 
 // Load .env from project root
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -39,5 +40,6 @@ program
 statusCommand(program);
 queryCommand(program);
 syncCommand(program);
+conceptCommand(program);
 
 program.parse();
