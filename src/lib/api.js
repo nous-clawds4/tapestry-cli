@@ -10,7 +10,7 @@ export function getBaseUrl() {
 
 export async function apiGet(path) {
   const url = `${getBaseUrl()}${path}`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+  const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
   if (!res.ok) {
     throw new Error(`API error: ${res.status} ${res.statusText} (${path})`);
   }

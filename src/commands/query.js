@@ -8,15 +8,15 @@ import { apiGet } from '../lib/api.js';
 const SHORTCUTS = {
   concepts: {
     desc: 'List all concept list headers',
-    cypher: `MATCH (h:ListHeader)-[:HAS_TAG]->(t {tagName: 'names'}) RETURN t.tagValue AS name, h.dTag AS dTag, substring(h.pubkey, 0, 12) + '...' AS author ORDER BY name`,
+    cypher: `MATCH (h:ListHeader)-[:HAS_TAG]->(d {type: 'd'}) OPTIONAL MATCH (h)-[:HAS_TAG]->(n {type: 'names'}) RETURN n.value AS name, d.value AS dTag, substring(h.pubkey, 0, 12) + '...' AS author ORDER BY name`,
   },
   items: {
     desc: 'List all list items with types',
-    cypher: `MATCH (i:ListItem)-[:HAS_TAG]->(t {tagName: 'name'}) RETURN t.tagValue AS name, i.dTag AS dTag, CASE WHEN i:Superset THEN 'Superset' WHEN i:Property THEN 'Property' WHEN i:JSONSchema THEN 'JSONSchema' WHEN i:Relationship THEN 'Relationship' ELSE 'Item' END AS type ORDER BY type, name`,
+    cypher: `MATCH (i:ListItem)-[:HAS_TAG]->(d {type: 'd'}) OPTIONAL MATCH (i)-[:HAS_TAG]->(n {type: 'name'}) RETURN n.value AS name, d.value AS dTag, CASE WHEN i:Superset THEN 'Superset' WHEN i:Property THEN 'Property' WHEN i:JSONSchema THEN 'JSONSchema' WHEN i:Relationship THEN 'Relationship' ELSE 'Item' END AS type ORDER BY type, name`,
   },
   graph: {
     desc: 'Show concept graph relationships',
-    cypher: `MATCH (a)-[r]->(b) WHERE NOT type(r) IN ['HAS_TAG'] AND (a:ListHeader OR a:ListItem) AND (b:ListHeader OR b:ListItem) RETURN a.dTag AS from_node, type(r) AS rel, b.dTag AS to_node ORDER BY type(r), a.dTag`,
+    cypher: `MATCH (a)-[r]->(b) WHERE NOT type(r) IN ['HAS_TAG'] AND (a:ListHeader OR a:ListItem) AND (b:ListHeader OR b:ListItem) OPTIONAL MATCH (a)-[:HAS_TAG]->(ad {type: 'd'}) OPTIONAL MATCH (b)-[:HAS_TAG]->(bd {type: 'd'}) RETURN ad.value AS from_node, type(r) AS rel, bd.value AS to_node ORDER BY type(r), ad.value`,
   },
   users: {
     desc: 'List nostr users in the graph',
@@ -28,7 +28,7 @@ const SHORTCUTS = {
   },
   supersets: {
     desc: 'Show superset hierarchy',
-    cypher: `MATCH (a)-[:IS_A_SUPERSET_OF]->(b) RETURN a.dTag AS parent, b.dTag AS child ORDER BY parent`,
+    cypher: `MATCH (a)-[:IS_A_SUPERSET_OF]->(b) OPTIONAL MATCH (a)-[:HAS_TAG]->(ad {type: 'd'}) OPTIONAL MATCH (b)-[:HAS_TAG]->(bd {type: 'd'}) RETURN ad.value AS parent, bd.value AS child ORDER BY parent`,
   },
 };
 
