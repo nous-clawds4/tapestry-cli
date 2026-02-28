@@ -136,8 +136,12 @@ Every `ListItem` must have a `z` tag whose value matches the `uuid` of an existi
 
 Every `ListItem` that is an element (not a Superset, Property, JSONSchema, or Relationship) must be reachable from its parent `ListHeader` through a valid class thread: `ListHeader → IS_THE_CONCEPT_FOR → Superset → (IS_A_SUPERSET_OF)* → HAS_ELEMENT → ListItem`.
 
-**Violation:** An element `ListItem` that exists but has no `HAS_ELEMENT` relationship from any `Superset`.
-**Fix:** Add a `HAS_ELEMENT` relationship from the concept's root superset to the element.
+**Violation types:**
+- **DList orphan** (Rule 2 overlap): The item's `z` tag references a parent that doesn't exist in the database. The class thread can't even begin.
+- **Class Thread orphan — inferrable**: The item's `z` tag resolves to a valid parent concept that has a Superset, but no explicit `HAS_ELEMENT` relationship exists. The relationship is logically deducible from the z-tag. See §6.7 for when this is an acceptable intentional violation.
+- **Class Thread orphan — blocked**: The item's parent exists but has no Superset node, so the class thread is structurally incomplete.
+
+**Fix:** Add a `HAS_ELEMENT` relationship from the concept's root superset (or an appropriate sub-set) to the element. For inferrable orphans, this may be intentionally deferred — see §6.7.
 
 ### Rule 4: Elements MUST validate against their concept's rules
 
@@ -166,6 +170,30 @@ For a given pubkey, there should be at most one `ListHeader` with a given `names
 ### Rule 8: The a-tag (uuid) MUST be unique per node
 
 No two nodes should share the same `aTag`/`uuid` value.
+
+### Rule 9: The Class Thread Anomaly
+
+There MUST be exactly one node in the concept graph that is an element of its own Superset — the **Class Thread Header** concept. This node is the origin point of a class thread whose elements are themselves the origin points of all other class threads.
+
+Formally, there must be exactly one node `a` satisfying:
+
+```cypher
+MATCH (a)-[:IS_THE_CONCEPT_FOR]->(:Superset)-[:IS_A_SUPERSET_OF*1..]->(c)-[:HAS_ELEMENT]->(a)
+RETURN DISTINCT a
+```
+
+This query finds any node that initiates a class thread (via IS_THE_CONCEPT_FOR) and is also reachable as an element within that same class thread (via IS_A_SUPERSET_OF → HAS_ELEMENT). The traversal through IS_A_SUPERSET_OF may pass through Superset nodes, Set nodes, or any intermediate node connected by this relationship type.
+
+**Properties of the anomalous node:**
+- It is the only node where the initiator and an element of a class thread are the same node
+- It is the concept whose elements are all concepts (i.e., all Class Thread Headers)
+- Its existence is structurally analogous to the "set of all sets" in set theory — but well-defined and non-paradoxical, because a concept graph is a finite directed graph, not an axiomatic set theory
+- In set theory, a set containing itself leads to Russell's Paradox; here, a concept containing itself as an element is an intentional structural singularity
+
+**Violation — too few:** If no node satisfies the query, then the Class Thread Header concept has not been properly initialized.
+**Violation — too many:** If more than one node satisfies the query, then the graph has an unintended self-referential cycle that must be investigated and resolved.
+
+**Name:** This rule is called the *Class Thread Anomaly*, after the "integral anomaly" in *The Matrix* — a structurally necessary singularity that the system is designed around rather than despite.
 
 ---
 
@@ -239,24 +267,59 @@ Events signed by the Tapestry Assistant (hot key) represent automated/institutio
 
 **Policy:** Not a violation. The pubkey on the event distinguishes the signer. Future GrapeRank contexts may weight these differently.
 
+### 6.7 Inferrable HAS_ELEMENT Relationships (Graph Compactness Tradeoff)
+
+Rule 3 requires every element to be reachable from its parent concept via a complete class thread, which means an explicit `HAS_ELEMENT` relationship from a Superset to the element must exist in Neo4j. However, this information is **already encoded** in the element's `z` tag — every ListItem's `z` tag points to its parent concept, and if that concept has a Superset node, the `HAS_ELEMENT` relationship is logically inferrable.
+
+For concepts with many elements (e.g., a "playlist" concept with hundreds of songs), creating explicit `HAS_ELEMENT` edges for every item adds potentially thousands of relationships that are entirely redundant with the z-tag data. This bloats the graph without adding new information.
+
+**The tradeoff:**
+- **Explicit HAS_ELEMENT:** Enables direct Cypher traversal (`(superset)-[:HAS_ELEMENT]->(item)`). Clean queries, fast graph walks.
+- **Inferred from z-tag:** Keeps the graph compact. Queries must join on the z-tag value instead of traversing a relationship, which is slightly more complex but avoids storing redundant edges.
+
+**When to use explicit HAS_ELEMENT:**
+- Small concepts (< ~20 items) where the relationship cost is negligible
+- Concepts where items have been organized into Sets (the HAS_ELEMENT goes from Set → Item, which is non-redundant structural information)
+- Concepts that are frequently queried via class thread traversal
+
+**When to leave inferred:**
+- Large, flat concepts with many items not yet organized into Sets
+- Concepts under active growth where items are being added frequently
+- Situations where graph compactness is prioritized over query convenience
+
+**Policy:** The `check-orphans` command distinguishes between **inferrable orphans** (z-tag resolves, Superset exists, HAS_ELEMENT missing) and **true orphans** (broken z-tag chain). Inferrable orphans are reported for awareness but are a legitimate intentional violation. They can be wired up on demand via `fix-has-element` when explicit traversal is needed.
+
 ---
 
-## 7. Normalization Commands (planned)
+## 7. Normalization Commands
+
+### Implemented
 
 ```bash
-# Check normalization status — report all violations
+# Report all normalization violations (Rules 1, 2, 7)
 tapestry normalize check
 
-# Fix missing supersets — create Superset nodes for ListHeaders that lack them
-tapestry normalize fix-supersets
+# Detailed view of ListHeaders missing Superset nodes (Rule 1)
+tapestry normalize check-supersets
 
-# Fix orphaned items — report ListItems with invalid z-tag references
+# Create missing Superset nodes + IS_THE_CONCEPT_FOR relationships
+tapestry normalize fix-supersets [--dry-run] [--personal]
+
+# Find orphaned ListItems — DList orphans (Rule 2) + Class Thread orphans (Rule 3)
+# Distinguishes inferrable orphans (valid z-tag, missing HAS_ELEMENT) from true orphans
 tapestry normalize check-orphans
+```
 
-# Validate elements against JSON schemas
+### Planned
+
+```bash
+# Create HAS_ELEMENT relationships for inferrable orphans
+tapestry normalize fix-has-element [--concept <name>] [--dry-run] [--personal]
+
+# Validate elements against JSON schemas (Rule 4)
 tapestry normalize validate <concept>
 
-# Full normalization — run all fixes
+# Full normalization — run all checks
 tapestry normalize all
 ```
 
@@ -264,12 +327,13 @@ tapestry normalize all
 
 ## 8. Current State
 
-As of 2026-02-28:
-- **49 ListHeaders** in the graph
-- **Only 2** have Superset nodes (dog, Trust Services Request)
-- **47 ListHeaders** are missing their class thread initiation
-- **3 test concepts** from the Tapestry Assistant that should be cleaned up
-- **setup.sh** handles labeling and relationship creation but does NOT create missing Superset nodes
+As of 2026-02-28 (post fix-supersets):
+- **66 ListHeaders** in the graph (9 without `names` tags — likely non-concept protocol data)
+- **All named ListHeaders** have Superset nodes (Rule 1 ✅)
+- **2 DList orphans** — Vinney's items referencing kind-9998 parents not in our database
+- **115 Class Thread orphans** (87 inferrable, 13 already wired, remainder structural)
+- **7 duplicate concepts** (Rule 7) across 3 authors
+- **setup.sh** handles labeling and relationship creation but does NOT create missing Superset or HAS_ELEMENT nodes
 
 ---
 

@@ -7,6 +7,8 @@ import { promisify } from 'util';
 import { randomBytes } from 'crypto';
 import { signEvent } from '../lib/signer.js';
 import { addItemCommand } from './concept-add.js';
+import { linkCommand } from './concept-link.js';
+import { elementCommand } from './concept-element.js';
 
 const execAsync = promisify(execCb);
 const CONTAINER = 'tapestry-tapestry-1';
@@ -30,6 +32,8 @@ export function conceptCommand(program) {
     });
 
   addItemCommand(concept);
+  linkCommand(concept);
+  elementCommand(concept);
 
   concept
     .command('list')

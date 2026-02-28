@@ -13,6 +13,7 @@ import { queryCommand } from '../src/commands/query.js';
 import { syncCommand } from '../src/commands/sync.js';
 import { conceptCommand } from '../src/commands/concept.js';
 import { normalizeCommand } from '../src/commands/normalize.js';
+import { setCommand } from '../src/commands/set.js';
 
 // Load .env from project root
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -43,5 +44,6 @@ queryCommand(program);
 syncCommand(program);
 conceptCommand(program);
 normalizeCommand(program);
+setCommand(program);
 
 program.parse();

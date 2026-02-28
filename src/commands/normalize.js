@@ -34,6 +34,13 @@ export function normalizeCommand(program) {
     });
 
   normalize
+    .command('check-orphans')
+    .description('Find orphaned ListItems (DList orphans + Class Thread orphans)')
+    .action(async () => {
+      await checkOrphans();
+    });
+
+  normalize
     .command('fix-supersets')
     .description('Create missing Superset nodes for ListHeaders')
     .option('--dry-run', 'Show what would be created without doing it')
@@ -92,6 +99,115 @@ async function checkSupersets() {
     console.log(`  ❌ "${row.concept}" (${row.plural || '?'}) — by ${pub}`);
   }
   console.log(`\nRun 'tapestry normalize fix-supersets' to create the missing nodes.\n`);
+}
+
+async function checkOrphans() {
+  console.log('\n🔍 Checking for orphaned ListItems...\n');
+
+  // ── DList Orphans (Rule 2) ──
+  // ListItems whose z-tag points to a parent that doesn't exist in the database
+  console.log('━'.repeat(50));
+  console.log('DList Orphans (Rule 2)');
+  console.log('Items whose z-tag references a nonexistent parent event\n');
+
+  const dlistOrphans = await cypher(
+    "MATCH (i:ListItem)-[:HAS_TAG]->(z:NostrEventTag {type: 'z'}) " +
+    "WHERE NOT EXISTS { MATCH (h) WHERE h.uuid = z.value AND (h:ListHeader OR h:ListItem) } " +
+    "OPTIONAL MATCH (i)-[:HAS_TAG]->(n:NostrEventTag {type: 'name'}) " +
+    "RETURN i.uuid AS uuid, n.value AS name, z.value AS zTag, i.pubkey AS pubkey " +
+    "ORDER BY name"
+  );
+
+  if (dlistOrphans.length === 0) {
+    console.log('  ✅ No DList orphans — all z-tags resolve to existing parents.\n');
+  } else {
+    console.log(`  ❌ ${dlistOrphans.length} DList orphan(s):\n`);
+    for (const row of dlistOrphans) {
+      const pub = row.pubkey ? row.pubkey.slice(0, 8) + '...' : '?';
+      const name = row.name || '(unnamed)';
+      console.log(`     "${name}" — by ${pub}`);
+      console.log(`       z-tag: ${row.zTag}`);
+      console.log(`       uuid:  ${row.uuid}\n`);
+    }
+  }
+
+  // ── Class Thread Orphans (Rule 3) ──
+  // ListItems with a valid parent, but no HAS_ELEMENT from any Superset
+  // Broken into: inferrable (z-tag chain is valid) vs true orphans
+  console.log('━'.repeat(50));
+  console.log('Class Thread Orphans (Rule 3)');
+  console.log('Items not reachable via Superset → HAS_ELEMENT\n');
+
+  // Items that ARE wired up
+  const wiredUp = await cypher(
+    "MATCH (:Superset)-[:HAS_ELEMENT]->(i:ListItem) " +
+    "RETURN count(DISTINCT i) AS cnt"
+  );
+  const wiredCount = parseInt(wiredUp[0]?.cnt || '0');
+
+  // Element items (exclude structural node types)
+  const totalElements = await cypher(
+    "MATCH (i:ListItem) " +
+    "WHERE NOT i:Superset AND NOT i:Property AND NOT i:JSONSchema AND NOT i:Relationship " +
+    "RETURN count(i) AS cnt"
+  );
+  const totalCount = parseInt(totalElements[0]?.cnt || '0');
+
+  console.log(`  Total element ListItems: ${totalCount}`);
+  console.log(`  Wired via HAS_ELEMENT:   ${wiredCount}`);
+  console.log(`  Missing HAS_ELEMENT:     ${totalCount - wiredCount}\n`);
+
+  // Break down the Class Thread orphans by concept, showing which are inferrable
+  const ctOrphans = await cypher(
+    "MATCH (i:ListItem)-[:HAS_TAG]->(z:NostrEventTag {type: 'z'}) " +
+    "WHERE NOT i:Superset AND NOT i:Property AND NOT i:JSONSchema AND NOT i:Relationship " +
+    "AND NOT (:Superset)-[:HAS_ELEMENT]->(i) " +
+    // Only items whose z-tag DOES resolve (DList orphans handled above)
+    "AND EXISTS { MATCH (h) WHERE h.uuid = z.value AND (h:ListHeader OR h:ListItem) } " +
+    "WITH z.value AS parentUuid, count(i) AS itemCount " +
+    // Get the parent's name
+    "MATCH (h) WHERE h.uuid = parentUuid AND (h:ListHeader OR h:ListItem) " +
+    "OPTIONAL MATCH (h)-[:HAS_TAG]->(t:NostrEventTag) WHERE t.type IN ['names', 'name'] " +
+    // Check if parent has a Superset (inferrable = could be wired up)
+    "OPTIONAL MATCH (h)-[:IS_THE_CONCEPT_FOR]->(s:Superset) " +
+    "RETURN COALESCE(t.value, '(unnamed)') AS concept, parentUuid, itemCount, " +
+    "CASE WHEN s IS NOT NULL THEN 'inferrable' ELSE 'blocked' END AS status " +
+    "ORDER BY itemCount DESC"
+  );
+
+  if (ctOrphans.length === 0 && (totalCount - wiredCount) === 0) {
+    console.log('  ✅ All element items are reachable via class threads.\n');
+  } else {
+    let inferrableTotal = 0;
+    let blockedTotal = 0;
+
+    console.log('  By concept:\n');
+    for (const row of ctOrphans) {
+      const icon = row.status === 'inferrable' ? '🔗' : '🚫';
+      const label = row.status === 'inferrable' ? 'inferrable' : 'blocked (no Superset)';
+      console.log(`     ${icon} "${row.concept}" — ${row.itemCount} item(s) [${label}]`);
+
+      if (row.status === 'inferrable') {
+        inferrableTotal += parseInt(row.itemCount);
+      } else {
+        blockedTotal += parseInt(row.itemCount);
+      }
+    }
+
+    console.log(`\n  Summary:`);
+    console.log(`     🔗 Inferrable (Superset exists, HAS_ELEMENT missing): ${inferrableTotal}`);
+    console.log(`     🚫 Blocked (parent has no Superset):                  ${blockedTotal}`);
+    console.log(`\n  Inferrable orphans have a valid z-tag chain and could be wired up`);
+    console.log(`  with HAS_ELEMENT relationships, but may be intentionally left`);
+    console.log(`  inferred to keep the graph compact.\n`);
+  }
+
+  // ── Grand Summary ──
+  console.log('━'.repeat(50));
+  const grandTotal = dlistOrphans.length + (totalCount - wiredCount);
+  console.log(`\n  DList orphans:        ${dlistOrphans.length}`);
+  console.log(`  Class Thread orphans: ${totalCount - wiredCount}`);
+  console.log(`  Total:                ${grandTotal}\n`);
 }
 
 async function fixSupersets(opts) {
