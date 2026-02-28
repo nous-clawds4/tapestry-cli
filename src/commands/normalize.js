@@ -77,7 +77,7 @@ async function checkSupersets() {
   const rows = await cypher(
     "MATCH (h:ListHeader)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'}) " +
     "WHERE NOT (h)-[:IS_THE_CONCEPT_FOR]->(:Superset) " +
-    "RETURN DISTINCT t.value AS concept, t.value1 AS plural, h.aTag AS aTag, h.pubkey AS pubkey " +
+    "RETURN DISTINCT t.value AS concept, t.value1 AS plural, h.uuid AS aTag, h.pubkey AS pubkey " +
     "ORDER BY concept"
   );
 
@@ -100,7 +100,7 @@ async function fixSupersets(opts) {
   const rows = await cypher(
     "MATCH (h:ListHeader)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'}) " +
     "WHERE NOT (h)-[:IS_THE_CONCEPT_FOR]->(:Superset) " +
-    "RETURN DISTINCT t.value AS concept, t.value1 AS plural, h.aTag AS aTag, h.pubkey AS pubkey " +
+    "RETURN DISTINCT t.value AS concept, t.value1 AS plural, h.uuid AS aTag, h.pubkey AS pubkey " +
     "ORDER BY concept"
   );
 
@@ -222,23 +222,33 @@ async function checkAll() {
   console.log('\n🔍 Tapestry Normalization Check\n');
   console.log('━'.repeat(50));
 
-  // Rule 1: Missing supersets
+  // Rule 1: Missing supersets (only count real concepts — those with a 'names' tag)
   console.log('\nRule 1: Every ListHeader must have a Superset');
   const missingSupersets = await cypher(
-    "MATCH (h:ListHeader) WHERE NOT (h)-[:IS_THE_CONCEPT_FOR]->(:Superset) RETURN count(h) AS cnt"
+    "MATCH (h:ListHeader)-[:HAS_TAG]->(:NostrEventTag {type: 'names'}) " +
+    "WHERE NOT (h)-[:IS_THE_CONCEPT_FOR]->(:Superset) RETURN count(DISTINCT h) AS cnt"
   );
   const missingCount = parseInt(missingSupersets[0]?.cnt || '0');
+
+  // Also count mislabeled ListHeaders (no 'names' tag — likely protocol data, not concepts)
+  const mislabeled = await cypher(
+    "MATCH (h:ListHeader) WHERE NOT (h)-[:HAS_TAG]->(:NostrEventTag {type: 'names'}) RETURN count(h) AS cnt"
+  );
+  const mislabeledCount = parseInt(mislabeled[0]?.cnt || '0');
   if (missingCount === 0) {
     console.log('  ✅ Pass');
   } else {
     console.log(`  ❌ ${missingCount} ListHeader(s) missing Superset nodes`);
+  }
+  if (mislabeledCount > 0) {
+    console.log(`  ℹ️  ${mislabeledCount} ListHeader node(s) have no 'names' tag (likely non-concept protocol data)`);
   }
 
   // Rule 2: Orphaned items
   console.log('\nRule 2: Every ListItem must have a valid parent pointer');
   const orphans = await cypher(
     "MATCH (i:ListItem)-[:HAS_TAG]->(z:NostrEventTag {type: 'z'}) " +
-    "WHERE NOT EXISTS { MATCH (h:ListHeader) WHERE h.aTag = z.value } " +
+    "WHERE NOT EXISTS { MATCH (h:ListHeader) WHERE h.uuid = z.value } " +
     "RETURN count(DISTINCT i) AS cnt"
   );
   const orphanCount = parseInt(orphans[0]?.cnt || '0');
