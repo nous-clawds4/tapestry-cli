@@ -10,10 +10,10 @@ A **normalized** tapestry concept graph is one where every node and relationship
 
 | Kind | Label | Description |
 |------|-------|-------------|
-| 39998 | `ListHeader` | Defines a concept (replaceable, addressable) |
-| 39999 | `ListItem` | An instance/element of a concept (replaceable, addressable) |
-| 9998 | `ListHeader` | Defines a concept (non-replaceable, legacy) |
-| 9999 | `ListItem` | An instance of a concept (non-replaceable, legacy) |
+| 39998 | `ListHeader` | Defines a concept (replaceable, addressable). Allowed but not preferred — see §1.4. |
+| 39999 | `ListItem` | An instance/element of a concept (replaceable, addressable). **Preferred for all new events.** |
+| 9998 | `ListHeader` | Defines a concept (non-replaceable, legacy). Allowed but not preferred — see §1.4. |
+| 9999 | `ListItem` | An instance of a concept (non-replaceable, legacy). Allowed. |
 
 ### 1.2 Addressing
 
@@ -33,6 +33,24 @@ Every `ListItem` has a `z` tag that points to its parent `ListHeader`'s a-tag. T
 ["z", "39998:<pubkey>:<d-tag>"]
 ```
 
+### 1.4 Concepts as Items (Kind Unification)
+
+A key insight of the tapestry protocol: **what makes something a concept is not its event kind — it's its position in the graph.** A node becomes a concept when other nodes reference it via their `z` tag.
+
+Consider the "node type" meta-concept, whose elements include things like "superset," "property," and "JSON schema." Each of these is simultaneously:
+- An **element** of the "node type" concept (it's a node type)
+- A **concept definition** (other items have z-tags pointing to it)
+
+In the original protocol design, kinds 9998/39998 (`ListHeader`) were reserved for concept definitions, and kinds 9999/39999 (`ListItem`) for instances. But if a ListItem can function as a concept — by having other items point to it — then the kind distinction is unnecessary. A concept is defined by its **role in the graph**, not by its event kind.
+
+#### Policy
+
+- **Preferred:** Use kind 39999 (replaceable ListItem) for all new events, including events that define concepts. A "concept" is any node that other nodes reference as their parent.
+- **Allowed:** Kinds 9998 and 39998 (ListHeader) remain valid and legitimate. Many users and existing implementations rely on the ListHeader/ListItem distinction, and there is no requirement to deprecate them. Both ListHeader and ListItem events are valid elements of any concept, including meta-concepts like "node type."
+- **Principle:** The graph structure (z-tag references, class threads) determines what is a concept, not the event kind.
+
+This means that the "node type" concept can contain elements of any kind — some may be kind 39998 ListHeaders (created by users who prefer the explicit distinction), and others may be kind 39999 ListItems (created by users who have embraced kind unification). Both are correct.
+
 ---
 
 ## 2. The Class Thread
@@ -47,15 +65,15 @@ A class thread has exactly three phases:
 Initiation → Propagation (0+ hops) → Termination
 ```
 
-#### Initiation: `ListHeader → Superset`
+#### Initiation: `Concept → Superset`
 
-Every `ListHeader` must be connected to exactly one **Superset** node via an `IS_THE_CONCEPT_FOR` relationship:
+Every concept node must be connected to exactly one **Superset** node via an `IS_THE_CONCEPT_FOR` relationship:
 
 ```
-(concept:ListHeader)-[:IS_THE_CONCEPT_FOR]->(superset:Superset:ListItem)
+(concept)-[:IS_THE_CONCEPT_FOR]->(superset:Superset:ListItem)
 ```
 
-The Superset node is itself a `ListItem` whose `z` tag points to the canonical "superset" `ListHeader` (UUID: `39998:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:21cbf5be-c972-4f45-ae09-c57e165e8cf9`).
+The concept node may be a `ListHeader` (kind 9998/39998) or a `ListItem` functioning as a concept (kind 9999/39999, per §1.4). The Superset node is itself a `ListItem` whose `z` tag points to the canonical "superset" concept.
 
 The Superset is conventionally named "the superset of all \<plural\>", e.g., "the superset of all dogs."
 
@@ -100,19 +118,19 @@ The element's `z` tag points back to the originating `ListHeader`.
 
 ## 3. Normalization Rules
 
-### Rule 1: Every ListHeader MUST have a Superset
+### Rule 1: Every concept MUST have a Superset
 
-Every `ListHeader` node must be connected to exactly one `Superset` node via `IS_THE_CONCEPT_FOR`.
+Every concept node — whether a `ListHeader` (kind 9998/39998) or a `ListItem` functioning as a concept (kind 9999/39999, per §1.4) — must be connected to exactly one `Superset` node via `IS_THE_CONCEPT_FOR`.
 
-**Violation:** A `ListHeader` with no `IS_THE_CONCEPT_FOR` relationship.
+**Violation:** A concept node with no `IS_THE_CONCEPT_FOR` relationship.
 **Fix:** Create a `Superset` `ListItem` with `z` tag pointing to the canonical superset concept, and create the `IS_THE_CONCEPT_FOR` relationship.
 
 ### Rule 2: Every ListItem MUST have a valid parent pointer
 
-Every `ListItem` must have a `z` tag whose value matches the `aTag` of an existing `ListHeader`.
+Every `ListItem` must have a `z` tag whose value matches the `uuid` of an existing concept node (whether that concept is a `ListHeader` or a `ListItem` functioning as a concept per §1.4).
 
-**Violation:** A `ListItem` with a `z` tag that references a nonexistent `ListHeader`.
-**Fix:** Either create the missing `ListHeader` or remove the orphaned `ListItem`.
+**Violation:** A `ListItem` with a `z` tag that references a nonexistent concept node.
+**Fix:** Either create the missing concept node or remove the orphaned `ListItem`.
 
 ### Rule 3: Every ListItem MUST be reachable via a class thread
 
