@@ -99,7 +99,40 @@ A superset contains concrete elements via `HAS_ELEMENT`:
 
 The element's `z` tag points back to the originating `ListHeader`.
 
-### 2.2 Class Thread Examples
+### 2.2 JSON Schema Attachment
+
+Every concept may have an associated **JSON Schema** node that specifies the structure expected of its elements. The JSON Schema connects directly to the concept's Class Thread Header:
+
+```
+(schema:JSONSchema:ListItem)-[:IS_THE_JSON_SCHEMA_FOR]->(concept:ClassThreadHeader)
+```
+
+The JSON Schema node is a `ListItem` (kind 39999) whose `z` tag points to the canonical "JSON schema" concept. Its `content` field holds the actual JSON Schema definition (a valid JSON object conforming to JSON Schema draft-07 or later).
+
+**Properties** are the building blocks of a JSON Schema. Each property is a separate `ListItem` connected to the schema:
+
+```
+(property:Property:ListItem)-[:IS_A_PROPERTY_OF]->(schema:JSONSchema)
+```
+
+Together, the JSON Schema and its Properties define the **horizontal structure** of a concept — what fields each element should have, their types, and constraints. This complements the **vertical structure** defined by the class thread (Superset hierarchy, HAS_ELEMENT).
+
+**Full concept structure:**
+```
+(:Property) ──IS_A_PROPERTY_OF──→ (:JSONSchema) ──IS_THE_JSON_SCHEMA_FOR──→ (concept)
+                                                                                |
+                                                                      IS_THE_CONCEPT_FOR
+                                                                                ↓
+                                                                          (:Superset)
+                                                                           /       \
+                                                                 IS_A_SUPERSET_OF  HAS_ELEMENT
+                                                                        ↓              ↓
+                                                                   (:Superset)    (:ListItem)
+```
+
+**Note:** The JSON Schema replaces the DList-era approach of specifying required tags directly on the ListHeader. Properties are more versatile — they support types, constraints, enumerations, and nesting.
+
+### 2.3 Class Thread Examples
 
 **Minimal (flat concept):**
 ```

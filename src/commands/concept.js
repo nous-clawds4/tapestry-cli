@@ -10,6 +10,7 @@ import { addItemCommand } from './concept-add.js';
 import { linkCommand } from './concept-link.js';
 import { elementCommand } from './concept-element.js';
 import { enumerateCommand } from './concept-enumerate.js';
+import { schemaCommand } from './concept-schema.js';
 
 const execAsync = promisify(execCb);
 const CONTAINER = 'tapestry-tapestry-1';
@@ -36,6 +37,7 @@ export function conceptCommand(program) {
   linkCommand(concept);
   elementCommand(concept);
   enumerateCommand(concept);
+  schemaCommand(concept);
 
   concept
     .command('list')
