@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tapestry — Concept Graph Explorer</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-hover: #79c0ff;
+      --green: #3fb950;
+      --orange: #d29922;
+      --red: #f85149;
+      --purple: #bc8cff;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    header h1 span { color: var(--text-muted); font-weight: 400; }
+
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    nav a:hover, nav a.active { color: var(--text); background: var(--border); }
+
+    #app { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+    /* Concept List View */
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 12px;
+    }
+
+    .concept-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .concept-card:hover { border-color: var(--accent); }
+
+    .concept-card h3 {
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .concept-card .meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+    .badge-green { background: rgba(63,185,80,0.15); color: var(--green); }
+    .badge-orange { background: rgba(210,153,34,0.15); color: var(--orange); }
+    .badge-red { background: rgba(248,81,73,0.15); color: var(--red); }
+    .badge-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+    .badge-blue { background: rgba(88,166,255,0.15); color: var(--accent); }
+
+    /* Concept Detail View */
+    .detail-header {
+      margin-bottom: 24px;
+    }
+    .detail-header h2 {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+    .detail-header .uuid {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: monospace;
+      word-break: break-all;
+    }
+    .detail-header .author {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .back-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-block;
+      margin-bottom: 16px;
+    }
+    .back-link:hover { color: var(--accent-hover); }
+
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .section h4 {
+      font-size: 14px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th {
+      text-align: left;
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    td.mono {
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      word-break: break-all;
+    }
+
+    .json-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      overflow-x: auto;
+      color: var(--green);
+    }
+
+    .rel-arrow { color: var(--text-muted); }
+    .rel-type { color: var(--purple); font-weight: 500; }
+    .clickable { color: var(--accent); cursor: pointer; }
+    .clickable:hover { text-decoration: underline; }
+
+    .empty { color: var(--text-muted); font-style: italic; font-size: 13px; }
+
+    .loading {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .stats-bar strong { color: var(--text); }
+
+    .search-box {
+      width: 100%;
+      max-width: 400px;
+      padding: 8px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 16px;
+      outline: none;
+    }
+    .search-box:focus { border-color: var(--accent); }
+    .search-box::placeholder { color: var(--text-muted); }
+
+    .enum-link {
+      font-size: 12px;
+      color: var(--purple);
+      margin-left: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🧶 Tapestry <span>Concept Graph Explorer</span></h1>
+  <nav>
+    <a onclick="showList()" id="nav-list" class="active">Concepts</a>
+  </nav>
+</header>
+
+<div id="app">
+  <div class="loading">Loading concept graph...</div>
+</div>
+
+<script>
+const API = 'http://localhost:8080/api/neo4j/run-query';
+
+// ─── Cypher helper ───────────────────────────────────────────
+
+async function cypher(query) {
+  const url = `${API}?cypher=${encodeURIComponent(query)}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || 'Query failed');
+  const raw = (data.cypherResults || '').trim();
+  if (!raw) return [];
+  const lines = raw.split('\n');
+  const header = lines[0].split(', ').map(h => h.trim());
+  return lines.slice(1).map(line => {
+    // Parse CSV-ish line — handles quoted values with commas and escaped quotes
+    const values = [];
+    let current = '';
+    let inQuote = false;
+    let i = 0;
+    while (i < line.length) {
+      const ch = line[i];
+      if (ch === '"' && !inQuote) {
+        inQuote = true;
+        i++;
+        continue;
+      }
+      if (ch === '\\' && inQuote && i + 1 < line.length) {
+        // Handle escape sequences inside quoted values
+        const next = line[i + 1];
+        if (next === '"') { current += '"'; i += 2; continue; }
+        if (next === '\\') { current += '\\'; i += 2; continue; }
+        // Other escapes — pass through
+        current += ch;
+        i++;
+        continue;
+      }
+      if (ch === '"' && inQuote) {
+        // Check for escaped quote ""
+        if (i + 1 < line.length && line[i + 1] === '"') {
+          current += '"';
+          i += 2;
+          continue;
+        }
+        inQuote = false;
+        i++;
+        continue;
+      }
+      if (ch === ',' && !inQuote) {
+        values.push(current.trim());
+        current = '';
+        // Skip space after comma
+        if (i + 1 < line.length && line[i + 1] === ' ') i++;
+        i++;
+        continue;
+      }
+      current += ch;
+      i++;
+    }
+    values.push(current.trim());
+    const row = {};
+    header.forEach((h, idx) => {
+      let v = values[idx];
+      if (v === undefined || v === 'NULL' || v === 'null') v = null;
+      row[h] = v;
+    });
+    return row;
+  });
+}
+
+function shortUuid(uuid) {
+  if (!uuid) return '';
+  const parts = uuid.split(':');
+  if (parts.length >= 3) return parts[0] + ':' + parts[1].slice(0, 8) + '...:' + parts.slice(2).join(':').slice(0, 8);
+  return uuid.slice(0, 24) + '...';
+}
+
+function shortPubkey(pk) {
+  if (!pk) return 'unknown';
+  return pk.slice(0, 8) + '...' + pk.slice(-4);
+}
+
+const KNOWN_AUTHORS = {
+  'e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f': 'Dave (straycat)',
+  '2d1fe9d3e0a3f3c0cf41812ba2075eb931b535b432fbdb2a6da430593d569e38': 'Tapestry Assistant',
+  'b83a28b7e4e5d20bd960c5faeb6625f95529166b8bdb045d42634a2f35919450': 'Avi Burra',
+  '2efaa715bbb46dd5be6b7da8d7700266d11674b913b8178addb5c2e63d987331': 'Vinney',
+  '4646ae5047316b4230d0086c8acec687f00b1cd9d1dc634f6cb358ac0a9a8fff': 'Vinney (alt)',
+  '15f7dafc4624b1e6b00ab7f863de1a53b71967528070ec7d1837c7a40c1c7270': 'AI Agents list author',
+};
+
+function authorName(pk) {
+  return KNOWN_AUTHORS[pk] || shortPubkey(pk);
+}
+
+// ─── Concept List View ───────────────────────────────────────
+
+async function showList() {
+  document.getElementById('nav-list').className = 'active';
+  const app = document.getElementById('app');
+  app.innerHTML = '<div class="loading">Loading concepts...</div>';
+
+  try {
+    // Get concepts with stats
+    const concepts = await cypher(`
+      MATCH (h)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'})
+      WHERE h:ListHeader OR h:ListItem
+      OPTIONAL MATCH (h)-[:IS_THE_CONCEPT_FOR]->(s:Superset)
+      OPTIONAL MATCH (js:JSONSchema)-[:IS_THE_JSON_SCHEMA_FOR]->(h)
+      OPTIONAL MATCH (js)-[:HAS_TAG]->(jt:NostrEventTag {type: 'json'})
+      OPTIONAL MATCH (p:Property)-[:IS_A_PROPERTY_OF]->(js)
+      RETURN DISTINCT
+        h.uuid AS uuid,
+        t.value AS name,
+        t.value1 AS plural,
+        h.pubkey AS author,
+        CASE WHEN s IS NOT NULL THEN 'yes' ELSE 'no' END AS hasSuperset,
+        CASE WHEN js IS NOT NULL THEN 'yes' ELSE 'no' END AS hasSchema,
+        CASE WHEN jt.value IS NOT NULL THEN 'yes' ELSE 'no' END AS hasSchemaContent,
+        count(DISTINCT p) AS propCount
+      ORDER BY name
+    `);
+
+    // Get item counts separately (simpler query)
+    const itemCounts = await cypher(`
+      MATCH (h)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'}),
+            (h)-[:HAS_TAG]->(d:NostrEventTag {type: 'd'})
+      WHERE h:ListHeader OR h:ListItem
+      OPTIONAL MATCH (i:ListItem)-[:HAS_TAG]->(z:NostrEventTag {type: 'z'})
+      WHERE z.value ENDS WITH d.value
+      RETURN h.uuid AS uuid, count(DISTINCT i) AS items
+    `);
+    const countMap = {};
+    itemCounts.forEach(r => { countMap[r.uuid] = parseInt(r.items) || 0; });
+
+    // Stats
+    const total = concepts.length;
+    const withSuperset = concepts.filter(c => c.hasSuperset === 'yes').length;
+    const withSchema = concepts.filter(c => c.hasSchema === 'yes').length;
+
+    let html = `
+      <input type="text" class="search-box" placeholder="Search concepts..." id="search" oninput="filterConcepts()">
+      <div class="stats-bar">
+        <span><strong>${total}</strong> concepts</span>
+        <span><strong>${withSuperset}</strong> with supersets</span>
+        <span><strong>${withSchema}</strong> with schemas</span>
+      </div>
+      <div class="concept-grid" id="concept-grid">
+    `;
+
+    for (const c of concepts) {
+      const items = countMap[c.uuid] || 0;
+      const props = parseInt(c.propCount) || 0;
+
+      let badges = '';
+      if (c.hasSuperset === 'yes') badges += '<span class="badge badge-green">superset ✓</span> ';
+      else badges += '<span class="badge badge-red">no superset</span> ';
+
+      if (c.hasSchemaContent === 'yes') badges += '<span class="badge badge-green">schema ✓</span> ';
+      else if (c.hasSchema === 'yes') badges += '<span class="badge badge-orange">schema (empty)</span> ';
+      else badges += '<span class="badge badge-red">no schema</span> ';
+
+      if (props > 0) badges += `<span class="badge badge-purple">${props} props</span> `;
+
+      html += `
+        <div class="concept-card" onclick="showDetail('${c.uuid}')" data-name="${(c.name||'').toLowerCase()}">
+          <h3>${c.name || 'unnamed'}</h3>
+          <div class="meta">
+            <span>${items} item${items !== 1 ? 's' : ''}</span>
+            <span>${authorName(c.author)}</span>
+          </div>
+          <div style="margin-top: 8px">${badges}</div>
+        </div>
+      `;
+    }
+
+    html += '</div>';
+    app.innerHTML = html;
+  } catch (err) {
+    app.innerHTML = `<div class="loading" style="color:var(--red)">Error: ${err.message}</div>`;
+  }
+}
+
+function filterConcepts() {
+  const q = document.getElementById('search').value.toLowerCase();
+  document.querySelectorAll('.concept-card').forEach(card => {
+    card.style.display = card.dataset.name.includes(q) ? '' : 'none';
+  });
+}
+
+// ─── Concept Detail View ─────────────────────────────────────
+
+async function showDetail(uuid) {
+  document.getElementById('nav-list').className = '';
+  const app = document.getElementById('app');
+  app.innerHTML = '<div class="loading">Loading concept...</div>';
+
+  try {
+    // Basic info
+    const info = await cypher(`
+      MATCH (h {uuid: '${uuid}'})-[:HAS_TAG]->(t:NostrEventTag {type: 'names'})
+      OPTIONAL MATCH (h)-[:HAS_TAG]->(desc:NostrEventTag {type: 'description'})
+      RETURN h.uuid AS uuid, h.pubkey AS author, h.kind AS kind,
+             t.value AS name, t.value1 AS plural, desc.value AS description
+      LIMIT 1
+    `);
+    const concept = info[0] || { uuid, name: 'Unknown', author: '' };
+
+    // Superset
+    const supersets = await cypher(`
+      MATCH (h {uuid: '${uuid}'})-[:IS_THE_CONCEPT_FOR]->(s:Superset)
+      OPTIONAL MATCH (s)-[:HAS_TAG]->(n:NostrEventTag {type: 'name'})
+      RETURN s.uuid AS uuid, n.value AS name
+    `);
+
+    // Sub-supersets (propagation)
+    const subSupersets = await cypher(`
+      MATCH (h {uuid: '${uuid}'})-[:IS_THE_CONCEPT_FOR]->(s:Superset)-[:IS_A_SUPERSET_OF]->(child:Superset)
+      OPTIONAL MATCH (child)-[:HAS_TAG]->(n:NostrEventTag {type: 'name'})
+      RETURN child.uuid AS uuid, n.value AS name
+    `);
+
+    // Parent supersets (what concepts is this a superset of?)
+    const parentSupersets = await cypher(`
+      MATCH (h {uuid: '${uuid}'})-[:IS_THE_CONCEPT_FOR]->(s:Superset)
+      MATCH (parent:Superset)-[:IS_A_SUPERSET_OF]->(s)
+      OPTIONAL MATCH (parent)-[:HAS_TAG]->(n:NostrEventTag {type: 'name'})
+      RETURN parent.uuid AS uuid, n.value AS name
+    `);
+
+    // JSON Schema (prefer ones with json content, deduplicate by uuid)
+    const schemasRaw = await cypher(`
+      MATCH (js:JSONSchema)-[:IS_THE_JSON_SCHEMA_FOR]->(h {uuid: '${uuid}'})
+      OPTIONAL MATCH (js)-[:HAS_TAG]->(n:NostrEventTag {type: 'name'})
+      OPTIONAL MATCH (js)-[:HAS_TAG]->(j:NostrEventTag {type: 'json'})
+      RETURN DISTINCT js.uuid AS uuid, n.value AS name, j.value AS json, js.pubkey AS author
+      ORDER BY j.value DESC
+    `);
+    const schemasSeen = new Set();
+    const schemas = schemasRaw.filter(s => {
+      if (schemasSeen.has(s.uuid)) return false;
+      schemasSeen.add(s.uuid);
+      return true;
+    });
+
+    // Properties (via schema, deduplicate by name — prefer ones with json/description)
+    const propsRaw = await cypher(`
+      MATCH (js:JSONSchema)-[:IS_THE_JSON_SCHEMA_FOR]->(h {uuid: '${uuid}'})
+      MATCH (p:Property)-[:IS_A_PROPERTY_OF]->(js)
+      OPTIONAL MATCH (p)-[:HAS_TAG]->(pn:NostrEventTag {type: 'name'})
+      OPTIONAL MATCH (p)-[:HAS_TAG]->(pt:NostrEventTag {type: 'type'})
+      OPTIONAL MATCH (p)-[:HAS_TAG]->(pd:NostrEventTag {type: 'description'})
+      OPTIONAL MATCH (p)-[:HAS_TAG]->(pj:NostrEventTag {type: 'json'})
+      OPTIONAL MATCH (enum:Superset)-[:ENUMERATES]->(p)
+      OPTIONAL MATCH (enum)-[:HAS_TAG]->(en:NostrEventTag {type: 'name'})
+      RETURN DISTINCT pn.value AS name, pt.value AS type, pd.value AS description,
+             pj.value AS json, p.uuid AS uuid, en.value AS enumeratedBy
+      ORDER BY name
+    `);
+    const propsSeen = new Set();
+    const properties = propsRaw.filter(p => {
+      const key = p.name || p.uuid;
+      if (propsSeen.has(key)) return false;
+      propsSeen.add(key);
+      return true;
+    });
+
+    // Elements (deduplicate by name — prefer ones with json data)
+    const elemRaw = await cypher(`
+      MATCH (h {uuid: '${uuid}'})-[:IS_THE_CONCEPT_FOR]->(s:Superset)-[:IS_A_SUPERSET_OF*0..5]->(ss)-[:HAS_ELEMENT]->(e:ListItem)
+      OPTIONAL MATCH (e)-[:HAS_TAG]->(n:NostrEventTag {type: 'name'})
+      OPTIONAL MATCH (e)-[:HAS_TAG]->(j:NostrEventTag {type: 'json'})
+      RETURN DISTINCT e.uuid AS uuid, n.value AS name, j.value AS json, e.pubkey AS author
+      ORDER BY j.value DESC, name
+    `);
+    // Prefer elements with json data over ones without
+    const elemByName = {};
+    for (const e of elemRaw) {
+      const key = e.name || e.uuid;
+      const hasJson = e.json && e.json !== 'NULL';
+      if (!elemByName[key] || (hasJson && !(elemByName[key].json && elemByName[key].json !== 'NULL'))) {
+        elemByName[key] = e;
+      }
+    }
+    const elements = Object.values(elemByName).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    // Concept-as-element (what concepts are elements of this one?)
+    const conceptElements = await cypher(`
+      MATCH (h {uuid: '${uuid}'})-[:IS_THE_CONCEPT_FOR]->(s:Superset)-[:IS_A_SUPERSET_OF*0..5]->(ss)-[:HAS_ELEMENT]->(ce)
+      WHERE (ce:ListHeader OR (ce:ListItem AND (ce)-[:IS_THE_CONCEPT_FOR]->()))
+      OPTIONAL MATCH (ce)-[:HAS_TAG]->(n:NostrEventTag)
+      WHERE n.type = 'names' OR n.type = 'name'
+      RETURN DISTINCT ce.uuid AS uuid, n.value AS name
+      ORDER BY name
+    `);
+
+    // ENUMERATES outgoing (what properties does this concept enumerate?)
+    const enumeratesOut = await cypher(`
+      MATCH (h {uuid: '${uuid}'})-[:IS_THE_CONCEPT_FOR]->(s:Superset)-[:ENUMERATES]->(p:Property)
+      OPTIONAL MATCH (p)-[:HAS_TAG]->(pn:NostrEventTag {type: 'name'})
+      OPTIONAL MATCH (p)-[:IS_A_PROPERTY_OF]->(js:JSONSchema)-[:IS_THE_JSON_SCHEMA_FOR]->(target)
+      OPTIONAL MATCH (target)-[:HAS_TAG]->(tn:NostrEventTag {type: 'names'})
+      RETURN DISTINCT pn.value AS property, tn.value AS ofConcept, target.uuid AS targetUuid
+      ORDER BY property
+    `);
+
+    // Provenance
+    const provenance = await cypher(`
+      MATCH (orig)-[:PROVIDED_THE_TEMPLATE_FOR]->(fork)
+      WHERE orig.uuid = '${uuid}' OR fork.uuid = '${uuid}'
+      OPTIONAL MATCH (orig)-[:HAS_TAG]->(on:NostrEventTag {type: 'name'})
+      OPTIONAL MATCH (fork)-[:HAS_TAG]->(fn:NostrEventTag {type: 'name'})
+      RETURN orig.uuid AS origUuid, on.value AS origName, fork.uuid AS forkUuid, fn.value AS forkName
+    `);
+
+    // Build HTML
+    let html = `
+      <a class="back-link" onclick="showList()">← All concepts</a>
+      <div class="detail-header">
+        <h2>${concept.name || 'Unknown'}</h2>
+        ${concept.plural ? `<span style="color:var(--text-muted)">plural: ${concept.plural}</span>` : ''}
+        ${concept.description ? `<p style="margin-top:4px;color:var(--text-muted)">${concept.description}</p>` : ''}
+        <div class="uuid">${concept.uuid}</div>
+        <div class="author">Author: ${authorName(concept.author)}</div>
+      </div>
+    `;
+
+    // Class Thread
+    html += `<div class="section"><h4>🧵 Class Thread</h4>`;
+    if (supersets.length > 0) {
+      html += `<table><tr><th>Phase</th><th>Node</th><th>UUID</th></tr>`;
+      html += `<tr><td>Initiation</td><td>${concept.name} → IS_THE_CONCEPT_FOR</td><td class="mono">${shortUuid(concept.uuid)}</td></tr>`;
+      for (const s of supersets) {
+        html += `<tr><td>Superset</td><td>${s.name || 'unnamed'}</td><td class="mono">${shortUuid(s.uuid)}</td></tr>`;
+      }
+      if (parentSupersets.length > 0) {
+        for (const ps of parentSupersets) {
+          html += `<tr><td>↑ Parent</td><td>${ps.name || 'unnamed'}</td><td class="mono">${shortUuid(ps.uuid)}</td></tr>`;
+        }
+      }
+      if (subSupersets.length > 0) {
+        for (const ss of subSupersets) {
+          html += `<tr><td>↓ Child</td><td>${ss.name || 'unnamed'}</td><td class="mono">${shortUuid(ss.uuid)}</td></tr>`;
+        }
+      }
+      html += `</table>`;
+    } else {
+      html += `<p class="empty">No superset node (Rule 1 violation)</p>`;
+    }
+    html += `</div>`;
+
+    // JSON Schema
+    html += `<div class="section"><h4>📋 JSON Schema</h4>`;
+    if (schemas.length > 0) {
+      // Only show the best schema (one with content, preferring newest)
+      const bestSchema = schemas.find(s => s.json && s.json !== 'NULL') || schemas[0];
+      if (bestSchema) {
+        html += `<div style="margin-bottom:8px"><strong>${bestSchema.name || 'unnamed'}</strong> <span style="color:var(--text-muted);font-size:12px">by ${authorName(bestSchema.author)}</span></div>`;
+        if (bestSchema.json) {
+          html += `<div class="json-block">${escapeHtml(prettyJson(bestSchema.json))}</div>`;
+        } else {
+          html += `<p class="empty">Schema exists but has no content</p>`;
+        }
+        if (schemas.length > 1) {
+          html += `<p style="font-size:12px;color:var(--text-muted);margin-top:8px">${schemas.length - 1} older schema version(s) also in graph</p>`;
+        }
+      }
+    } else {
+      html += `<p class="empty">No JSON Schema</p>`;
+    }
+    html += `</div>`;
+
+    // Properties
+    html += `<div class="section"><h4>🔧 Properties</h4>`;
+    if (properties.length > 0) {
+      html += `<table><tr><th>Name</th><th>Type</th><th>Description</th><th>Enumerated By</th></tr>`;
+      for (const p of properties) {
+        html += `<tr>
+          <td><strong>${p.name || 'unnamed'}</strong></td>
+          <td><span class="badge badge-blue">${p.type || '?'}</span></td>
+          <td>${p.description || '<span class="empty">—</span>'}</td>
+          <td>${p.enumeratedBy ? `<span class="enum-link">← ${p.enumeratedBy}</span>` : '<span class="empty">—</span>'}</td>
+        </tr>`;
+      }
+      html += `</table>`;
+    } else {
+      html += `<p class="empty">No properties defined</p>`;
+    }
+    html += `</div>`;
+
+    // ENUMERATES (outgoing)
+    if (enumeratesOut.length > 0) {
+      html += `<div class="section"><h4>🔗 Enumerates (Horizontal Integration)</h4>`;
+      html += `<p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">This concept's elements provide valid values for these properties:</p>`;
+      html += `<table><tr><th>Property</th><th>On Concept</th></tr>`;
+      for (const e of enumeratesOut) {
+        html += `<tr>
+          <td><strong>${e.property || '?'}</strong></td>
+          <td>${e.ofConcept ? `<span class="clickable" onclick="showDetail('${e.targetUuid}')">${e.ofConcept}</span>` : '<span class="empty">—</span>'}</td>
+        </tr>`;
+      }
+      html += `</table></div>`;
+    }
+
+    // Elements
+    html += `<div class="section"><h4>📦 Elements (${elements.length})</h4>`;
+    if (elements.length > 0) {
+      html += `<table><tr><th>Name</th><th>Author</th><th>JSON Data</th></tr>`;
+      for (const e of elements) {
+        let jsonCell = '<span class="empty">—</span>';
+        if (e.json) {
+          jsonCell = `<div class="json-block" style="font-size:11px;max-height:120px;overflow:auto">${escapeHtml(prettyJson(e.json))}</div>`;
+        }
+        html += `<tr>
+          <td><strong>${e.name || 'unnamed'}</strong></td>
+          <td style="font-size:12px;color:var(--text-muted)">${authorName(e.author)}</td>
+          <td>${jsonCell}</td>
+        </tr>`;
+      }
+      html += `</table>`;
+    } else {
+      html += `<p class="empty">No elements</p>`;
+    }
+    html += `</div>`;
+
+    // Concept-as-element
+    if (conceptElements.length > 0) {
+      html += `<div class="section"><h4>🧩 Concepts as Elements</h4>`;
+      html += `<p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">These concepts are also elements of this concept:</p>`;
+      for (const ce of conceptElements) {
+        html += `<span class="clickable" onclick="showDetail('${ce.uuid}')" style="display:inline-block;margin:2px 8px 2px 0;padding:2px 8px;border:1px solid var(--border);border-radius:4px">${ce.name || 'unnamed'}</span>`;
+      }
+      html += `</div>`;
+    }
+
+    // Provenance
+    if (provenance.length > 0) {
+      html += `<div class="section"><h4>📜 Provenance</h4>`;
+      html += `<table><tr><th>Original</th><th></th><th>Fork</th></tr>`;
+      for (const p of provenance) {
+        html += `<tr>
+          <td>${p.origName || shortUuid(p.origUuid)}</td>
+          <td class="rel-arrow">→ <span class="rel-type">PROVIDED_THE_TEMPLATE_FOR</span> →</td>
+          <td>${p.forkName || shortUuid(p.forkUuid)}</td>
+        </tr>`;
+      }
+      html += `</table></div>`;
+    }
+
+    app.innerHTML = html;
+  } catch (err) {
+    app.innerHTML = `
+      <a class="back-link" onclick="showList()">← All concepts</a>
+      <div class="loading" style="color:var(--red)">Error: ${err.message}</div>
+    `;
+  }
+}
+
+function prettyJson(str) {
+  if (!str) return '';
+  // The Cypher CSV output double-escapes: \" becomes \\" in the raw text.
+  // After our CSV parser strips outer quotes, we get strings like:
+  //   {\"type\":\"object\"}
+  // We need to unescape those.
+  try { return JSON.stringify(JSON.parse(str), null, 2); } catch {}
+  try {
+    // Handle \" → "
+    const u1 = str.replace(/\\"/g, '"');
+    return JSON.stringify(JSON.parse(u1), null, 2);
+  } catch {}
+  try {
+    // Handle \\" → \"  then \" → "
+    const u2 = str.replace(/\\\\"/g, '\\"').replace(/\\"/g, '"');
+    return JSON.stringify(JSON.parse(u2), null, 2);
+  } catch {}
+  return str;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ─── Init ────────────────────────────────────────────────────
+showList();
+</script>
+</body>
+</html>
