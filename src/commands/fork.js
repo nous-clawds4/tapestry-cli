@@ -24,6 +24,9 @@ const execAsync = promisify(execCb);
 const CONTAINER = 'tapestry-tapestry-1';
 const RELATIONSHIP_CONCEPT_UUID = '39998:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:c15357e6-6665-45cc-8ea5-0320b8026f05';
 
+// Relationship types that should NOT be swapped during a fork
+const DEFAULT_EXCLUDED_RELS = ['AUTHORS', 'PROVIDED_THE_TEMPLATE_FOR', 'HAS_TAG'];
+
 async function cypher(query) {
   const encoded = encodeURIComponent(query);
   const data = await apiGet(`/api/neo4j/run-query?cypher=${encoded}`);
@@ -162,6 +165,7 @@ export function forkCommand(program) {
     .option('--add-tag <key=value...>', 'Add a new tag (repeatable)', collect, [])
     .option('--remove-tag <key...>', 'Remove a tag by type (repeatable)', collect, [])
     .option('--edit-content <text>', 'Set the content field on the fork')
+    .option('--keep-rel <type...>', 'Additional relationship types to exclude from swapping (repeatable)', collect, [])
     .option('--personal', 'Sign with personal nsec from 1Password')
     .option('--dry-run', 'Show what would be created without doing it')
     .action(async (nodeName, opts) => {
@@ -234,9 +238,12 @@ async function forkNode(nodeName, opts) {
 
   const newContent = opts.editContent !== undefined ? opts.editContent : origEvent.content;
 
-  // 4. Find relationships involving the original node
-  const rels = await findRelationships(node.uuid);
-  console.log(`\n  🔗 Found ${rels.length} relationship(s) to swap:`);
+  // 4. Find relationships involving the original node (excluding intrinsic ones)
+  const excludedRels = [...DEFAULT_EXCLUDED_RELS, ...(opts.keepRel || [])];
+  const allRels = await findRelationships(node.uuid);
+  const rels = allRels.filter(r => !excludedRels.includes(r.relType));
+  const skipped = allRels.length - rels.length;
+  console.log(`\n  🔗 Found ${rels.length} relationship(s) to swap${skipped > 0 ? ` (${skipped} excluded: ${excludedRels.join(', ')})` : ''}:`);
   for (const r of rels) {
     const dir = r.nodeFrom === node.uuid ? '→' : '←';
     const other = r.nodeFrom === node.uuid ? r.nodeTo : r.nodeFrom;

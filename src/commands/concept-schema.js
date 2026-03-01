@@ -186,7 +186,11 @@ async function handleSchema(conceptName, opts) {
 
   if (existing && opts.replace) {
     console.log(`  ⚠️  Replacing existing schema: ${existing.uuid}`);
-    await createAndWireSchema(concept.uuid, concept.name, conceptName, opts);
+    const newSchemaUuid = await createAndWireSchema(concept.uuid, concept.name, conceptName, opts);
+    if (newSchemaUuid && !opts.dryRun) {
+      // Auto-rewire properties from old schema to new schema
+      await rewireProperties(existing.uuid, newSchemaUuid, opts);
+    }
     return;
   }
 
@@ -244,7 +248,7 @@ async function createAndWireSchema(conceptUuid, conceptDisplayName, conceptSearc
     console.log(`        nodeFrom: <schema uuid>`);
     console.log(`        nodeTo:   ${conceptUuid}`);
     console.log('');
-    return;
+    return null;
   }
 
   // 1. Create the JSON Schema node
@@ -296,6 +300,49 @@ async function createAndWireSchema(conceptUuid, conceptDisplayName, conceptSearc
 
   console.log(`\n✨ JSON Schema created and wired for "${conceptDisplayName}"!`);
   console.log(`   ${schemaUuid} → IS_THE_JSON_SCHEMA_FOR → ${conceptUuid}\n`);
+
+  return schemaUuid;
+}
+
+/**
+ * Find properties wired to an old schema and rewire them to a new schema.
+ */
+async function rewireProperties(oldSchemaUuid, newSchemaUuid, opts) {
+  const esc = oldSchemaUuid.replace(/'/g, "\\'");
+  const rows = await cypher(
+    `MATCH (p:Property)-[:IS_A_PROPERTY_OF]->(s {uuid: '${esc}'}) ` +
+    `OPTIONAL MATCH (p)-[:HAS_TAG]->(pn:NostrEventTag {type: 'name'}) ` +
+    `RETURN DISTINCT p.uuid AS uuid, pn.value AS name`
+  );
+
+  if (rows.length === 0) {
+    console.log(`  ℹ️  No properties to rewire.`);
+    return;
+  }
+
+  console.log(`\n  🔄 Rewiring ${rows.length} property/ies to new schema...`);
+  const events = [];
+  for (const prop of rows) {
+    const relDTag = randomBytes(4).toString('hex');
+    const relEvent = await signEvent({
+      kind: 39999,
+      tags: [
+        ['d', relDTag],
+        ['name', `${prop.name || 'property'} IS_A_PROPERTY_OF ${newSchemaUuid}`],
+        ['z', RELATIONSHIP_CONCEPT_UUID],
+        ['nodeFrom', prop.uuid],
+        ['nodeTo', newSchemaUuid],
+        ['relationshipType', 'IS_A_PROPERTY_OF'],
+      ],
+      content: '',
+    }, { personal: opts.personal });
+    events.push(relEvent);
+    console.log(`     ✅ ${prop.name} → new schema`);
+  }
+
+  console.log('\n  📡 Importing rewired relationships...');
+  await importEvents(events);
+  await updateNeo4j();
 }
 
 async function wireSchema(schemaUuid, conceptUuid, conceptName, opts) {

@@ -385,11 +385,23 @@ These are the foundational concepts that define the structure of the concept gra
 In a decentralized system, you cannot edit another author's event — only they can publish a replacement (same d-tag, same pubkey). When you want to modify a node you imported from someone else, the standard procedure is:
 
 1. **Copy**: Create a new kind 39999 event that duplicates the original's tags and content, with your edits applied
-2. **Swap**: Detach all relationships from the original node and reattach them to your new node
+2. **Swap**: Detach all relationships from the original node and reattach them to your new node, **except** relationships that are intrinsic to the original (see exclusion list below)
 3. **Link**: Create a `PROVIDED_THE_TEMPLATE_FOR` relationship from the original to your fork
 4. **Retain**: Leave the original node in the graph — it serves as a provenance record and a change-detection anchor
 
-The original node remains connected only via `PROVIDED_THE_TEMPLATE_FOR`. If the original author later updates their event, you can compare it against your fork and decide whether to pull their changes.
+The original node remains connected only via `PROVIDED_THE_TEMPLATE_FOR` and any excluded relationships. If the original author later updates their event, you can compare it against your fork and decide whether to pull their changes.
+
+#### Excluded Relationships (not swapped during fork)
+
+The following relationship types are **not** transferred from the original to the fork by default:
+
+| Relationship | Reason |
+|-------------|--------|
+| `AUTHORS` | Intrinsic to the original event's creator — authorship doesn't transfer |
+| `PROVIDED_THE_TEMPLATE_FOR` | Provenance chain — a new one is created (original → fork), existing ones stay |
+| `HAS_TAG` | Internal Neo4j structure — tags belong to the original event, the fork gets its own |
+
+Additional relationship types may be excluded on a case-by-case basis using `--keep-rel <type>` on the `tapestry fork` command. The default exclusion list covers the common cases; edge cases should be evaluated by the operator.
 
 This pattern applies to any node type: Properties, JSONSchemas, Supersets, Relationships, or plain elements. It is the fundamental mechanism for learning from peers while maintaining editorial control over your own concept graph.
 
