@@ -51,6 +51,48 @@ In the original protocol design, kinds 9998/39998 (`ListHeader`) were reserved f
 
 This means that the "node type" concept can contain elements of any kind — some may be kind 39998 ListHeaders (created by users who prefer the explicit distinction), and others may be kind 39999 ListItems (created by users who have embraced kind unification). Both are correct.
 
+### 1.5 Implicit vs. Explicit Relationships
+
+A critical distinction: **most relationships in the concept graph do not have corresponding nostr events.** They are *implicit* — derived by the graph engine from event structure (tags, kind numbers, normalization rules).
+
+#### Implicit Relationships (the norm)
+
+When the graph engine processes a `ListItem` whose `z` tag points to a concept, it creates a `HAS_ELEMENT` relationship in Neo4j. When a Superset node's `z` tag points to the canonical superset concept, the engine labels it as a Superset and wires up `IS_THE_CONCEPT_FOR`. These relationships exist in the graph database but have no dedicated nostr event — they are **inferred from the structure of other events**.
+
+The vast majority of relationships are implicit:
+- `IS_THE_CONCEPT_FOR` — inferred from a Superset's z-tag + naming convention
+- `IS_A_SUPERSET_OF` — inferred from superset hierarchy tags
+- `HAS_ELEMENT` — inferred from an element's z-tag (see also §6.7)
+- `IS_A_PROPERTY_OF` — inferred from a property's z-tag or structural tags
+- `IS_THE_JSON_SCHEMA_FOR` — inferred from a schema's z-tag or structural tags
+- `AUTHORS` — inferred from the event's pubkey
+- `HAS_TAG` — inferred from the event's tag array
+
+#### Explicit Relationships (the exception)
+
+An **explicit relationship** is a nostr event — a `ListItem` (kind 39999) whose z-tag points to the "relationship" concept — that formally declares a relationship between two nodes. These events have `nodeFrom`, `nodeTo`, and `relationshipType` tags (see Rule 6).
+
+Explicit relationship events exist for one reason: **when someone wants to communicate a relationship to the community as a first-class piece of data.** Examples include:
+- `PROVIDED_THE_TEMPLATE_FOR` — provenance linking a fork to its original
+- `IMPORT` — declaring semantic equivalence between concepts
+- `SUPERCEDES` — recording an editorial rejection
+- `ENUMERATES` — declaring horizontal integration between a superset and a property
+
+These are relationships whose existence is an editorial statement worth publishing, not just a structural consequence of other data.
+
+#### Why not make every relationship explicit?
+
+Consider what would happen: creating an explicit relationship event makes it an element of the "relationship" concept, which means it should have a `HAS_ELEMENT` edge from the relationship concept's Superset. If that `HAS_ELEMENT` also needed an explicit event, that event would itself need a `HAS_ELEMENT` event... and so on, ad infinitum.
+
+The protocol avoids this infinite regress by design. Implicit relationships are the default. Explicit relationship events are reserved for cases where the relationship itself carries editorial or provenance significance worth broadcasting to the network.
+
+#### Implications for agents and tooling
+
+- **Do not expect** a nostr event to exist for every relationship in the Neo4j graph.
+- **Do not create** relationship events unless the relationship has editorial significance.
+- When checking normalization, the absence of a relationship event is normal — check for the relationship *in the graph*, not for a corresponding event.
+- The `tapestry normalize` commands operate on graph-level relationships, not on relationship events.
+
 ---
 
 ## 2. The Class Thread
@@ -189,9 +231,9 @@ Each element of a concept must conform to:
 
 Every `Superset` node's `z` tag must point to one of the recognized "superset" `ListHeader` UUIDs.
 
-### Rule 6: Relationship nodes MUST have nodeFrom, nodeTo, and relationshipType tags
+### Rule 6: Explicit relationship events MUST have nodeFrom, nodeTo, and relationshipType tags
 
-Every `Relationship` `ListItem` must have:
+When a relationship is represented as an explicit nostr event (see §1.5), that `Relationship` `ListItem` must have:
 - `nodeFrom` tag: UUID of the source node
 - `nodeTo` tag: UUID of the target node  
 - `relationshipType` tag: one of the recognized relationship types (IS_THE_CONCEPT_FOR, IS_A_SUPERSET_OF, HAS_ELEMENT, IS_A_PROPERTY_OF, IS_THE_JSON_SCHEMA_FOR, ENUMERATES)
@@ -351,34 +393,36 @@ These are the foundational concepts that define the structure of the concept gra
 
 ## 5. Recognized Relationship Types
 
+> **Note:** The relationships listed here exist in the Neo4j concept graph. Most are **implicit** — derived by the graph engine from event structure (see §1.5). Only a subset are represented as explicit nostr events (relationship `ListItem`s), typically the editorial and provenance relationships. The "Typical form" column indicates whether a relationship type is usually implicit or explicit.
+
 ### Class Thread Relationships
 
-| Relationship | From → To | Phase |
-|-------------|-----------|-------|
-| `IS_THE_CONCEPT_FOR` | Class Thread Header → Superset | Initiation |
-| `IS_A_SUPERSET_OF` | Superset → Superset/Set | Propagation |
-| `HAS_ELEMENT` | Superset/Set → ListItem/Class Thread Header | Termination |
+| Relationship | From → To | Phase | Typical Form |
+|-------------|-----------|-------|--------------|
+| `IS_THE_CONCEPT_FOR` | Class Thread Header → Superset | Initiation | Implicit |
+| `IS_A_SUPERSET_OF` | Superset → Superset/Set | Propagation | Implicit |
+| `HAS_ELEMENT` | Superset/Set → ListItem/Class Thread Header | Termination | Implicit |
 
 ### Concept Structure Relationships
 
-| Relationship | From → To | Purpose |
-|-------------|-----------|---------|
-| `IS_A_PROPERTY_OF` | Property → JSONSchema | Defines a property on a schema |
-| `IS_THE_JSON_SCHEMA_FOR` | JSONSchema → Class Thread Header | Associates a schema with a concept |
-| `ENUMERATES` | Superset → Property | Horizontal integration (planned) |
+| Relationship | From → To | Purpose | Typical Form |
+|-------------|-----------|---------|--------------|
+| `IS_A_PROPERTY_OF` | Property → JSONSchema | Defines a property on a schema | Implicit |
+| `IS_THE_JSON_SCHEMA_FOR` | JSONSchema → Class Thread Header | Associates a schema with a concept | Implicit |
+| `ENUMERATES` | Superset → Property | Horizontal integration | Explicit |
 
 ### Editorial Relationships (Soft Duplication Resolution)
 
-| Relationship | From → To | Purpose |
-|-------------|-----------|---------|
-| `IMPORT` | Class Thread Header → Class Thread Header | "I agree with your definition and want to benefit from your curated elements." Implies IS_A_SUPERSET_OF between the respective Supersets. |
-| `SUPERCEDES` | Class Thread Header → Class Thread Header | "I've evaluated your definition and chosen to replace it with mine." Non-destructive rejection — a recorded editorial judgment. |
+| Relationship | From → To | Purpose | Typical Form |
+|-------------|-----------|---------|--------------|
+| `IMPORT` | Class Thread Header → Class Thread Header | "I agree with your definition and want to benefit from your curated elements." Implies IS_A_SUPERSET_OF between the respective Supersets. | Explicit |
+| `SUPERCEDES` | Class Thread Header → Class Thread Header | "I've evaluated your definition and chosen to replace it with mine." Non-destructive rejection — a recorded editorial judgment. | Explicit |
 
 ### Provenance Relationships (Forking)
 
-| Relationship | From → To | Purpose |
-|-------------|-----------|---------|
-| `PROVIDED_THE_TEMPLATE_FOR` | Original node → Forked node | Records that a node was created by copying and editing another author's node. The original remains in the graph as a provenance record. |
+| Relationship | From → To | Purpose | Typical Form |
+|-------------|-----------|---------|--------------|
+| `PROVIDED_THE_TEMPLATE_FOR` | Original node → Forked node | Records that a node was created by copying and editing another author's node. The original remains in the graph as a provenance record. | Explicit |
 
 #### The Fork Pattern
 
