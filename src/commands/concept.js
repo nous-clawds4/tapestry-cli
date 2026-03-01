@@ -9,6 +9,7 @@ import { signEvent } from '../lib/signer.js';
 import { addItemCommand } from './concept-add.js';
 import { linkCommand } from './concept-link.js';
 import { elementCommand } from './concept-element.js';
+import { enumerateCommand } from './concept-enumerate.js';
 
 const execAsync = promisify(execCb);
 const CONTAINER = 'tapestry-tapestry-1';
@@ -34,6 +35,7 @@ export function conceptCommand(program) {
   addItemCommand(concept);
   linkCommand(concept);
   elementCommand(concept);
+  enumerateCommand(concept);
 
   concept
     .command('list')
