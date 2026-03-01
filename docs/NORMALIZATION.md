@@ -374,6 +374,33 @@ These are the foundational concepts that define the structure of the concept gra
 | `IMPORT` | Class Thread Header → Class Thread Header | "I agree with your definition and want to benefit from your curated elements." Implies IS_A_SUPERSET_OF between the respective Supersets. |
 | `SUPERCEDES` | Class Thread Header → Class Thread Header | "I've evaluated your definition and chosen to replace it with mine." Non-destructive rejection — a recorded editorial judgment. |
 
+### Provenance Relationships (Forking)
+
+| Relationship | From → To | Purpose |
+|-------------|-----------|---------|
+| `PROVIDED_THE_TEMPLATE_FOR` | Original node → Forked node | Records that a node was created by copying and editing another author's node. The original remains in the graph as a provenance record. |
+
+#### The Fork Pattern
+
+In a decentralized system, you cannot edit another author's event — only they can publish a replacement (same d-tag, same pubkey). When you want to modify a node you imported from someone else, the standard procedure is:
+
+1. **Copy**: Create a new kind 39999 event that duplicates the original's tags and content, with your edits applied
+2. **Swap**: Detach all relationships from the original node and reattach them to your new node
+3. **Link**: Create a `PROVIDED_THE_TEMPLATE_FOR` relationship from the original to your fork
+4. **Retain**: Leave the original node in the graph — it serves as a provenance record and a change-detection anchor
+
+The original node remains connected only via `PROVIDED_THE_TEMPLATE_FOR`. If the original author later updates their event, you can compare it against your fork and decide whether to pull their changes.
+
+This pattern applies to any node type: Properties, JSONSchemas, Supersets, Relationships, or plain elements. It is the fundamental mechanism for learning from peers while maintaining editorial control over your own concept graph.
+
+```
+(Alice's "breed" property) ──PROVIDED_THE_TEMPLATE_FOR──→ (my "breed" property)
+                                                               |
+                                                        IS_A_PROPERTY_OF
+                                                               ↓
+                                                    (my "JSON schema for dogs")
+```
+
 ---
 
 ## 6. Intentional Normalization Violations

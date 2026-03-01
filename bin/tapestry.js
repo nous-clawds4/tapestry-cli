@@ -14,6 +14,7 @@ import { syncCommand } from '../src/commands/sync.js';
 import { conceptCommand } from '../src/commands/concept.js';
 import { normalizeCommand } from '../src/commands/normalize.js';
 import { setCommand } from '../src/commands/set.js';
+import { forkCommand } from '../src/commands/fork.js';
 
 // Load .env from project root
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -45,5 +46,6 @@ syncCommand(program);
 conceptCommand(program);
 normalizeCommand(program);
 setCommand(program);
+forkCommand(program);
 
 program.parse();
