@@ -163,13 +163,62 @@ Every `Relationship` `ListItem` must have:
 - `nodeTo` tag: UUID of the target node  
 - `relationshipType` tag: one of the recognized relationship types (IS_THE_CONCEPT_FOR, IS_A_SUPERSET_OF, HAS_ELEMENT, IS_A_PROPERTY_OF, IS_THE_JSON_SCHEMA_FOR, ENUMERATES)
 
-### Rule 7: No duplicate concepts
+### Rule 7: No hard duplication
 
-For a given pubkey, there should be at most one `ListHeader` with a given `names` value. Multiple versions from different pubkeys are expected (that's the decentralized part), but duplicates from the same author indicate an error.
+**Hard duplication** occurs when the same piece of data exists as two or more distinct nodes in the graph database. This is a database-level integrity problem — the same information occupying two places at once — and is what "normalization" means in the classical relational database sense.
 
-### Rule 8: The a-tag (uuid) MUST be unique per node
+Hard duplication MUST be prevented via uniqueness constraints:
+- No two `NostrEvent` nodes should share the same `id` (event ID)
+- No two `NostrUser` nodes should share the same `pubkey`
+- No two nodes should share the same `aTag`/`uuid` value
 
-No two nodes should share the same `aTag`/`uuid` value.
+```cypher
+// Detect hard duplicates by event ID
+MATCH (a:NostrEvent), (b:NostrEvent)
+WHERE a.id = b.id AND id(a) < id(b)
+RETURN a.id AS duplicateEventId, count(*) AS copies
+```
+
+**Fix:** Merge duplicate nodes or remove the redundant copy. This should ideally be enforced by Neo4j uniqueness constraints at the database level.
+
+### Rule 8: Soft duplication — resolution via IMPORT and SUPERCEDES
+
+**Soft duplication** occurs when two or more nodes are *intended to serve the same purpose* but are distinct events authored independently. This is not a bug — it is an inherent and expected feature of decentralized collaboration. Multiple authors will independently define overlapping concepts, and that is by design.
+
+**Example:** Alice and Bob each create a Class Thread Header called "internet troll." Same name, similar purpose — but upon close reading, their descriptions may differ in subtle or significant ways. Are they duplicates? Maybe. Maybe not. Such is the nature of decentralized collaboration.
+
+#### Resolution Framework
+
+Soft duplication is resolved through explicit editorial relationships between Class Thread Header nodes:
+
+**IMPORT** — "I agree with your definition, and I want to benefit from your work."
+
+When you IMPORT another author's concept, you are declaring semantic equivalence: your concept and theirs refer to the same thing. This implies that your Superset IS_A_SUPERSET_OF their Superset — meaning their curated elements automatically flow into your concept through the class thread hierarchy.
+
+```
+(my "internet troll") -[:IMPORT]-> (Alice's "internet troll")
+  implies: (my superset) -[:IS_A_SUPERSET_OF]-> (Alice's superset)
+```
+
+IMPORT is composable: if Alice imports Carol's definition, and you import Alice's, you transitively benefit from Carol's curation through the IS_A_SUPERSET_OF chain.
+
+**SUPERCEDES** — "I've seen your definition and I'm replacing it with mine."
+
+When your concept SUPERCEDES another, you are recording a deliberate editorial judgment: you have evaluated their definition and chosen to use your own instead. The superceded node remains in the graph as a permanent record of the rejection. It is non-destructive — you haven't censored anything, you've expressed a preference. And that preference is itself data that the Grapevine can weigh.
+
+```
+(my "internet troll") -[:SUPERCEDES]-> (Bob's "internet troll")
+```
+
+If Bob disagrees, he can create his own SUPERCEDES pointing the other way. The Grapevine resolves the conflict through community trust scores — this is the essence of **loose consensus**.
+
+#### Same-Author Soft Duplicates
+
+When two concepts with the same name are authored by the *same* pubkey, this typically indicates an error — a concept created twice by accident, or an old version that should have been replaced. For replaceable events (kind 39998/39999), the protocol handles this naturally (newer event replaces older with same d-tag). For non-replaceable events (kind 9998/9999), same-author duplicates should be investigated and one should SUPERCEDE the other.
+
+#### The Role of the Grapevine
+
+When soft duplication accumulates — ten users submit almost-but-not-quite-equivalent definitions of "internet troll" — and you don't care which one to use, but you *do* care about being able to communicate with others, you select the definition that carries the most support from your community. This is **loose consensus**: Alice's and Bob's webs of trust may overlap enough to converge on the same definition without centralized coordination. The demonstration of loose consensus will be one of the greatest triumphs of Tapestry.
 
 ### Rule 9: The Class Thread Anomaly
 
@@ -216,14 +265,28 @@ These are the foundational concepts that define the structure of the concept gra
 
 ## 5. Recognized Relationship Types
 
+### Class Thread Relationships
+
 | Relationship | From → To | Phase |
 |-------------|-----------|-------|
-| `IS_THE_CONCEPT_FOR` | ListHeader → Superset | Initiation |
-| `IS_A_SUPERSET_OF` | Superset → Superset | Propagation |
-| `HAS_ELEMENT` | Superset → ListItem | Termination |
-| `IS_A_PROPERTY_OF` | Property → JSONSchema | Concept structure |
-| `IS_THE_JSON_SCHEMA_FOR` | JSONSchema → ListHeader | Concept structure |
-| `ENUMERATES` | Superset → Property | Concept structure |
+| `IS_THE_CONCEPT_FOR` | Class Thread Header → Superset | Initiation |
+| `IS_A_SUPERSET_OF` | Superset → Superset/Set | Propagation |
+| `HAS_ELEMENT` | Superset/Set → ListItem/Class Thread Header | Termination |
+
+### Concept Structure Relationships
+
+| Relationship | From → To | Purpose |
+|-------------|-----------|---------|
+| `IS_A_PROPERTY_OF` | Property → JSONSchema | Defines a property on a schema |
+| `IS_THE_JSON_SCHEMA_FOR` | JSONSchema → Class Thread Header | Associates a schema with a concept |
+| `ENUMERATES` | Superset → Property | Horizontal integration (planned) |
+
+### Editorial Relationships (Soft Duplication Resolution)
+
+| Relationship | From → To | Purpose |
+|-------------|-----------|---------|
+| `IMPORT` | Class Thread Header → Class Thread Header | "I agree with your definition and want to benefit from your curated elements." Implies IS_A_SUPERSET_OF between the respective Supersets. |
+| `SUPERCEDES` | Class Thread Header → Class Thread Header | "I've evaluated your definition and chosen to replace it with mine." Non-destructive rejection — a recorded editorial judgment. |
 
 ---
 
@@ -237,11 +300,11 @@ A concept may be partially defined — a `ListHeader` exists but the Superset, P
 
 **Policy:** Flag but don't auto-fix unless requested. The `tapestry normalize` command should report these as warnings.
 
-### 6.2 Cross-Author Concepts
+### 6.2 Cross-Author Concepts (Soft Duplication)
 
-When multiple authors define the same concept independently, their class threads are separate. Alice's "nostr relay" concept and Bob's "nostr relay" concept are distinct graphs. Web of Trust scoring determines which version(s) to trust, but both are valid in the database.
+When multiple authors define the same concept independently, their class threads are separate. Alice's "nostr relay" concept and Bob's "nostr relay" concept are distinct graphs. This is soft duplication (see Rule 8) — an expected and legitimate feature of decentralized collaboration, not a violation.
 
-**Policy:** Not a violation. The graph correctly represents multiple perspectives.
+**Policy:** Not a violation. Resolve using IMPORT (semantic equivalence) or SUPERCEDES (editorial rejection) as described in Rule 8. The Grapevine determines which definitions achieve loose consensus across the network.
 
 ### 6.3 Deprecated / Broken Concepts
 
