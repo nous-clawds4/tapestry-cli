@@ -277,6 +277,59 @@ This query finds any node that initiates a class thread (via IS_THE_CONCEPT_FOR)
 
 **Name:** This rule is called the *Class Thread Anomaly*, after the "integral anomaly" in *The Matrix* — a structurally necessary singularity that the system is designed around rather than despite.
 
+### Rule 10: Concept slugs MUST be locally unique
+
+Every concept in a user's graph must have a unique `slug` tag value. The slug serves as the **namespace key** in element JSON data, where a single element may carry properties from multiple concepts.
+
+#### Why Slugs Matter
+
+A single node can be an element of multiple concepts simultaneously. For example, Fido might be an element of "animal," "dog," and "Irish Setter" — each contributing its own properties. The element's `json` tag stores all of these in a single JSON object, namespaced by concept slug:
+
+```json
+["json", "{\"animal\":{\"species\":\"dog\"},\"dog\":{\"name\":\"Fido\",\"breed\":\"Irish Setter\",\"pedigree\":{}},\"irishSetter\":{\"foo\":\"bar\"}}"]
+```
+
+The slug is the human-readable key that makes this workable. If two concepts share a slug, the JSON namespacing breaks.
+
+#### The `json` Tag Convention
+
+Element data is stored in a `json` tag (not `content`) on the nostr event:
+
+```
+["json", "<stringified JSON object>"]
+```
+
+The tag name `json` (not a single letter) is chosen deliberately: nostr relays index single-letter tags, and JSON payloads may be large. Using a multi-letter tag name avoids burdening relay indexes.
+
+The `content` field remains available for human-readable descriptions, notes, or other text.
+
+#### JSON Structure
+
+The JSON object is keyed by concept slug. Each key's value is an object whose properties are defined by that concept's JSON Schema:
+
+```json
+{
+  "<concept-slug-1>": { "<property>": "<value>", ... },
+  "<concept-slug-2>": { "<property>": "<value>", ... }
+}
+```
+
+Each concept's JSON Schema validates only its own namespace — the object at `json[slug]`. A concept's schema does not need to know about other concepts' properties.
+
+#### Slug Collisions
+
+- **Same author:** A slug collision between two concepts by the same author is a hard error that must be resolved by renaming one concept's slug.
+- **Cross-author:** Slug collisions between different authors are resolved through the same IMPORT/SUPERCEDES mechanism as other soft duplication (Rule 8). When two authors' concepts share a slug, the Grapevine determines which definition achieves loose consensus — and with it, which slug mapping is canonical.
+
+#### Slug Derivation
+
+If a concept has an explicit `slug` tag, that value is used. If not, the slug is derived from the concept's `names` tag by converting to camelCase: split on whitespace, lowercase the first word, capitalize the first letter of subsequent words, remove non-alphanumeric characters. Examples: "dog" → `dog`, "Irish Setter" → `irishSetter`, "Dog Breed" → `dogBreed`, "Class Thread Header" → `classThreadHeader`.
+
+Explicit `slug` tags are recommended for concepts where the derived slug would be awkward or ambiguous.
+
+**Violation:** Two concept nodes in the same author's graph have the same slug (whether explicit or derived).
+**Fix:** Add an explicit `slug` tag to one concept to disambiguate.
+
 ---
 
 ## 4. Meta-Concepts (Canonical ListHeaders)

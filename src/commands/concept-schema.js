@@ -143,6 +143,7 @@ export function schemaCommand(concept) {
     .command('schema <concept-name>')
     .description('Show, create, or wire the JSON Schema for a concept')
     .option('--create', 'Create a new JSON Schema node and wire it')
+    .option('--replace', 'Replace existing schema with a new one (creates new node + wiring)')
     .option('--wire', 'Wire an existing unwired JSON Schema to the concept')
     .option('--content <json>', 'JSON Schema content (valid JSON object)')
     .option('--personal', 'Sign with personal nsec from 1Password')
@@ -165,7 +166,7 @@ async function handleSchema(conceptName, opts) {
 
   // Check for existing wired schema
   const existing = await findExistingSchema(concept.uuid);
-  if (existing) {
+  if (existing && !opts.replace) {
     console.log(`  ✅ Schema already wired: ${existing.uuid}`);
     if (!opts.create && !opts.wire) {
       // Show schema details
@@ -177,8 +178,15 @@ async function handleSchema(conceptName, opts) {
       for (const d of details) {
         console.log(`    ${d.tag}: ${d.v1}${d.v2 ? ' ' + d.v2 : ''}`);
       }
+      console.log('\n  Use --replace --content \'...\' to replace with a new schema.');
     }
     console.log('');
+    return;
+  }
+
+  if (existing && opts.replace) {
+    console.log(`  ⚠️  Replacing existing schema: ${existing.uuid}`);
+    await createAndWireSchema(concept.uuid, concept.name, conceptName, opts);
     return;
   }
 
@@ -241,16 +249,20 @@ async function createAndWireSchema(conceptUuid, conceptDisplayName, conceptSearc
 
   // 1. Create the JSON Schema node
   console.log('\n  📝 Creating JSON Schema node...');
+  const tags = [
+    ['d', dTag],
+    ['name', schemaName],
+    ['slug', slug],
+    ['title', schemaName.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')],
+    ['z', JSON_SCHEMA_CONCEPT_UUID],
+  ];
+  if (content) {
+    tags.push(['json', content]);
+  }
   const schemaEvent = await signEvent({
     kind: 39999,
-    tags: [
-      ['d', dTag],
-      ['name', schemaName],
-      ['slug', slug],
-      ['title', schemaName.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')],
-      ['z', JSON_SCHEMA_CONCEPT_UUID],
-    ],
-    content,
+    tags,
+    content: '',
   }, { personal: opts.personal });
 
   const schemaUuid = `39999:${schemaEvent.pubkey}:${dTag}`;
