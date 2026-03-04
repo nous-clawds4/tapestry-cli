@@ -2,22 +2,21 @@
  * tapestry normalize — housekeeping commands for concept graph integrity
  */
 
-import { exec as execCb } from 'child_process';
-import { promisify } from 'util';
 import { randomBytes } from 'crypto';
 import { apiGet } from '../lib/api.js';
 import { signEvent } from '../lib/signer.js';
-
-const execAsync = promisify(execCb);
-const CONTAINER = 'tapestry-tapestry-1';
-
-// Canonical "superset" ListHeader UUID from defaults.conf
-const SUPERSET_CONCEPT_ATAG = '39998:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:21cbf5be-c972-4f45-ae09-c57e165e8cf9';
+import { importEventsAndSync } from '../lib/neo4j.js';
+import { uuid } from '../lib/config.js';
+import { normalizeSkeletonCommand } from './normalize-skeleton.js';
+import { normalizeJsonCommand } from './normalize-json.js';
 
 export function normalizeCommand(program) {
   const normalize = program
     .command('normalize')
     .description('Check and fix concept graph normalization');
+
+  normalizeSkeletonCommand(normalize);
+  normalizeJsonCommand(normalize);
 
   normalize
     .command('check')
@@ -47,6 +46,21 @@ export function normalizeCommand(program) {
     .option('--personal', 'Sign with personal nsec from 1Password')
     .action(async (opts) => {
       await fixSupersets(opts);
+    });
+
+  normalize
+    .command('check-schemas')
+    .description('Find concepts with multiple JSON Schema nodes (Rule 11)')
+    .action(async () => {
+      await checkSchemas();
+    });
+
+  normalize
+    .command('fix-schemas')
+    .description('Resolve concepts with multiple JSON Schema nodes (Rule 11)')
+    .option('--dry-run', 'Show what would be changed without doing it')
+    .action(async (opts) => {
+      await fixSchemas(opts);
     });
 }
 
@@ -232,7 +246,7 @@ async function fixSupersets(opts) {
     for (const row of rows) {
       const plural = row.plural || row.concept + 's';
       console.log(`  📝 "${row.concept}" → Superset: "the superset of all ${plural}"`);
-      console.log(`     z-tag: ${SUPERSET_CONCEPT_ATAG}`);
+      console.log(`     z-tag: ${uuid('superset')}`);
       console.log(`     nodeFrom: <new superset uuid>`);
       console.log(`     nodeTo: ${row.aTag}`);
       console.log('');
@@ -257,7 +271,7 @@ async function fixSupersets(opts) {
       tags: [
         ['d', dTag],
         ['name', supersetName],
-        ['z', SUPERSET_CONCEPT_ATAG],
+        ['z', uuid('superset')],
       ],
       content: '',
     }, { personal: opts.personal });
@@ -270,7 +284,6 @@ async function fixSupersets(opts) {
     const relDTag = randomBytes(4).toString('hex');
 
     // The relationship's z-tag points to the canonical "relationship" concept
-    const RELATIONSHIP_CONCEPT_ATAG = '39998:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:c15357e6-6665-45cc-8ea5-0320b8026f05';
     // UUID for IS_THE_CONCEPT_FOR relationship type
     const IS_THE_CONCEPT_FOR_UUID = '39999:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:24bc3eb6-fd75-4679-a3d7-d0b1a2a62be8';
 
@@ -279,7 +292,7 @@ async function fixSupersets(opts) {
       tags: [
         ['d', relDTag],
         ['name', `${row.concept} IS_THE_CONCEPT_FOR ${supersetName}`],
-        ['z', RELATIONSHIP_CONCEPT_ATAG],
+        ['z', uuid('relationship')],
         ['nodeFrom', row.aTag],
         ['nodeTo', supersetATag],
         ['relationshipType', 'IS_THE_CONCEPT_FOR'],
@@ -293,45 +306,187 @@ async function fixSupersets(opts) {
     console.log(`     ✅ Relationship: ${relEvent.id.slice(0, 12)}...`);
   }
 
-  // Import all events into strfry
-  console.log(`\n  📡 Importing ${events.length} events to strfry...`);
-  const jsonl = events.map(e => JSON.stringify(e)).join('\n');
+  // Import all events into strfry + targeted Neo4j import
+  console.log(`\n  📡 Importing ${events.length} events...`);
   try {
-    // Write to a temp file and pipe it
-    const tmpFile = `/tmp/tapestry_normalize_${Date.now()}.jsonl`;
-    const { writeFileSync } = await import('fs');
-    writeFileSync(tmpFile, jsonl);
-    const { stdout } = await execAsync(
-      `cat ${tmpFile} | docker exec -i ${CONTAINER} strfry import 2>&1`,
-      { timeout: 30000 }
-    );
-    const addedMatch = stdout.match(/(\d+) added/);
-    console.log(`  ✅ ${addedMatch ? addedMatch[1] : events.length} events written to strfry`);
-    // Clean up
-    const { unlinkSync } = await import('fs');
-    unlinkSync(tmpFile);
+    await importEventsAndSync(events);
   } catch (err) {
-    console.error(`  ❌ strfry import failed: ${err.message}`);
+    console.error(`  ❌ Import failed: ${err.message}`);
     return;
   }
 
-  // Run batch transfer + setup to update Neo4j
-  console.log('\n  📊 Updating Neo4j...');
-  try {
-    await execAsync(
-      `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/batchTransfer.sh`,
-      { timeout: 120000 }
-    );
-    await execAsync(
-      `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/setup.sh`,
-      { timeout: 60000 }
-    );
-    console.log('  ✅ Neo4j updated — labels and relationships applied');
-  } catch (err) {
-    console.error(`  ❌ Neo4j update failed: ${err.message}`);
+  console.log(`\n✨ Created ${created} Superset nodes with IS_THE_CONCEPT_FOR relationships.\n`);
+}
+
+// ─── Rule 11: JSON Schema deduplication ──────────────────────
+
+// Principal author = Tapestry Assistant (default signer from BRAINSTORM_RELAY_NSEC)
+const PRINCIPAL_PUBKEY = '2d1fe9d3e0a3f3c0cf41812ba2075eb931b535b432fbdb2a6da430593d569e38';
+
+async function checkSchemas() {
+  console.log('\n🔍 Checking for concepts with multiple JSON Schema nodes (Rule 11)...\n');
+
+  const rows = await cypher(
+    "MATCH (js:JSONSchema)-[:IS_THE_JSON_SCHEMA_FOR]->(h) " +
+    "OPTIONAL MATCH (h)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'}) " +
+    "OPTIONAL MATCH (js)-[:HAS_TAG]->(jn:NostrEventTag {type: 'name'}) " +
+    "OPTIONAL MATCH (js)-[:HAS_TAG]->(jt:NostrEventTag {type: 'json'}) " +
+    "WITH h, t.value AS conceptName, " +
+    "  collect(DISTINCT {uuid: js.uuid, name: jn.value, author: js.pubkey, hasJson: jt.value IS NOT NULL}) AS schemas " +
+    "WHERE size(schemas) > 1 " +
+    "RETURN h.uuid AS uuid, conceptName, schemas"
+  );
+
+  if (rows.length === 0) {
+    console.log('✅ All concepts have at most one JSON Schema. Rule 11 is satisfied.\n');
+    return;
   }
 
-  console.log(`\n✨ Created ${created} Superset nodes with IS_THE_CONCEPT_FOR relationships.\n`);
+  console.log(`⚠️  ${rows.length} concept(s) with multiple JSON Schema nodes:\n`);
+  for (const row of rows) {
+    console.log(`  ❌ "${row.conceptName || '(unnamed)'}"`);
+    console.log(`     UUID: ${row.uuid}`);
+    // The schemas field comes back as a string from our CSV parser
+    console.log(`     Schemas: ${row.schemas}`);
+    console.log('');
+  }
+  console.log(`Run 'tapestry normalize fix-schemas' to resolve.\n`);
+}
+
+async function fixSchemas(opts) {
+  console.log('\n🔧 Resolving concepts with multiple JSON Schema nodes (Rule 11)...\n');
+
+  // Find concepts with >1 schema
+  const concepts = await cypher(
+    "MATCH (js:JSONSchema)-[:IS_THE_JSON_SCHEMA_FOR]->(h) " +
+    "OPTIONAL MATCH (h)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'}) " +
+    "WITH h, t.value AS conceptName, collect(DISTINCT js.uuid) AS schemaUuids " +
+    "WHERE size(schemaUuids) > 1 " +
+    "RETURN h.uuid AS uuid, conceptName, schemaUuids"
+  );
+
+  if (concepts.length === 0) {
+    console.log('✅ Nothing to fix — all concepts have at most one JSON Schema.\n');
+    return;
+  }
+
+  console.log(`Found ${concepts.length} concept(s) needing schema deduplication.\n`);
+
+  let fixed = 0;
+
+  for (const concept of concepts) {
+    console.log(`  📋 "${concept.conceptName || '(unnamed)'}"`);
+
+    // Get details for each schema on this concept
+    const schemas = await cypher(
+      "MATCH (js:JSONSchema)-[:IS_THE_JSON_SCHEMA_FOR]->(h {uuid: '" + concept.uuid + "'}) " +
+      "OPTIONAL MATCH (js)-[:HAS_TAG]->(jn:NostrEventTag {type: 'name'}) " +
+      "OPTIONAL MATCH (js)-[:HAS_TAG]->(jt:NostrEventTag {type: 'json'}) " +
+      "OPTIONAL MATCH (p:Property)-[:IS_A_PROPERTY_OF]->(js) " +
+      "RETURN DISTINCT js.uuid AS uuid, jn.value AS name, js.pubkey AS author, " +
+      "  CASE WHEN jt.value IS NOT NULL THEN 'yes' ELSE 'no' END AS hasJson, " +
+      "  count(DISTINCT p) AS propCount"
+    );
+
+    // Select the winner using the heuristic:
+    // 1. Principal author match
+    // 2. Content over empty
+    // 3. Most properties
+    let winner = null;
+    const losers = [];
+
+    // Priority 1: principal author with content
+    winner = schemas.find(s => s.author === PRINCIPAL_PUBKEY && s.hasJson === 'yes');
+    // Priority 2: principal author (even without content)
+    if (!winner) winner = schemas.find(s => s.author === PRINCIPAL_PUBKEY);
+    // Priority 3: any schema with content
+    if (!winner) winner = schemas.find(s => s.hasJson === 'yes');
+    // Priority 4: most properties
+    if (!winner) {
+      schemas.sort((a, b) => parseInt(b.propCount) - parseInt(a.propCount));
+      winner = schemas[0];
+    }
+
+    for (const s of schemas) {
+      if (s.uuid !== winner.uuid) losers.push(s);
+    }
+
+    console.log(`     ✅ Keep: "${winner.name}" (${winner.author === PRINCIPAL_PUBKEY ? 'principal' : winner.author?.slice(0, 8) + '...'}, json=${winner.hasJson}, ${winner.propCount} props)`);
+    for (const loser of losers) {
+      console.log(`     ❌ Deprecate: "${loser.name}" (${loser.author?.slice(0, 8) + '...'}, json=${loser.hasJson}, ${loser.propCount} props)`);
+    }
+
+    if (opts.dryRun) {
+      console.log('     🏜️  Dry run — skipping changes\n');
+      continue;
+    }
+
+    // For each loser: remove IS_THE_JSON_SCHEMA_FOR, re-wire or remove properties, add SUPERCEDES
+    for (const loser of losers) {
+      // 1. Remove IS_THE_JSON_SCHEMA_FOR
+      await cypher(
+        "MATCH (js {uuid: '" + loser.uuid + "'})-[r:IS_THE_JSON_SCHEMA_FOR]->(h {uuid: '" + concept.uuid + "'}) DELETE r"
+      );
+      console.log(`     🔗 Removed IS_THE_JSON_SCHEMA_FOR from "${loser.name}"`);
+
+      // 2. Re-wire properties: if same name exists on winner, just remove; otherwise re-wire
+      const loserProps = await cypher(
+        "MATCH (p:Property)-[:IS_A_PROPERTY_OF]->(js {uuid: '" + loser.uuid + "'}) " +
+        "OPTIONAL MATCH (p)-[:HAS_TAG]->(pn:NostrEventTag {type: 'name'}) " +
+        "RETURN p.uuid AS uuid, pn.value AS name"
+      );
+
+      for (const lp of loserProps) {
+        // Check if winner already has a property with this name
+        const existing = await cypher(
+          "MATCH (p:Property)-[:IS_A_PROPERTY_OF]->(js {uuid: '" + winner.uuid + "'}) " +
+          "MATCH (p)-[:HAS_TAG]->(pn:NostrEventTag {type: 'name', value: '" + (lp.name || '') + "'}) " +
+          "RETURN p.uuid AS uuid"
+        );
+
+        // Remove edge from loser schema
+        await cypher(
+          "MATCH (p {uuid: '" + lp.uuid + "'})-[r:IS_A_PROPERTY_OF]->(js {uuid: '" + loser.uuid + "'}) DELETE r"
+        );
+
+        if (existing.length > 0) {
+          console.log(`     🔗 Removed duplicate IS_A_PROPERTY_OF for "${lp.name}" (already on winner)`);
+        } else {
+          // Re-wire to winner
+          await cypher(
+            "MATCH (p {uuid: '" + lp.uuid + "'}), (js {uuid: '" + winner.uuid + "'}) " +
+            "CREATE (p)-[:IS_A_PROPERTY_OF]->(js)"
+          );
+          console.log(`     🔗 Re-wired IS_A_PROPERTY_OF for "${lp.name}" to winner schema`);
+        }
+      }
+
+      // 3. Create SUPERCEDES relationship
+      // Check if it already exists
+      const existingSupercedes = await cypher(
+        "MATCH (a {uuid: '" + winner.uuid + "'})-[:SUPERCEDES]->(b {uuid: '" + loser.uuid + "'}) RETURN count(*) AS cnt"
+      );
+      if (parseInt(existingSupercedes[0]?.cnt || '0') === 0) {
+        await cypher(
+          "MATCH (a {uuid: '" + winner.uuid + "'}), (b {uuid: '" + loser.uuid + "'}) " +
+          "CREATE (a)-[:SUPERCEDES]->(b)"
+        );
+        console.log(`     🔗 Created SUPERCEDES: "${winner.name}" → "${loser.name}"`);
+      } else {
+        console.log(`     ℹ️  SUPERCEDES already exists`);
+      }
+    }
+
+    fixed++;
+    console.log('');
+  }
+
+  console.log(`✨ Resolved ${fixed} concept(s) with duplicate schemas.\n`);
+}
+
+/** Exported for use by sync command */
+export async function runNormalizeCheck() {
+  return checkAll();
 }
 
 async function checkAll() {
@@ -391,8 +546,23 @@ async function checkAll() {
     }
   }
 
+  // Rule 11: Duplicate JSON Schemas
+  console.log('\nRule 11: Every concept must have at most one active JSON Schema');
+  const dupSchemas = await cypher(
+    "MATCH (js:JSONSchema)-[:IS_THE_JSON_SCHEMA_FOR]->(h) " +
+    "WITH h, count(DISTINCT js) AS cnt " +
+    "WHERE cnt > 1 " +
+    "RETURN count(h) AS total"
+  );
+  const dupSchemaCount = parseInt(dupSchemas[0]?.total || '0');
+  if (dupSchemaCount === 0) {
+    console.log('  ✅ Pass');
+  } else {
+    console.log(`  ❌ ${dupSchemaCount} concept(s) with multiple JSON Schema nodes`);
+  }
+
   // Summary
-  const total = missingCount + orphanCount + dupes.length;
+  const total = missingCount + orphanCount + dupes.length + dupSchemaCount;
   console.log('\n' + '━'.repeat(50));
   if (total === 0) {
     console.log('✅ Graph is fully normalized!\n');
