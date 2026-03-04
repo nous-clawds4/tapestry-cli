@@ -9,9 +9,9 @@
 
 import { exec as execCb } from 'child_process';
 import { promisify } from 'util';
+import { getConfig } from './config.js';
 
 const execAsync = promisify(execCb);
-const CONTAINER = 'tapestry-tapestry-1';
 
 let nostrTools;
 async function loadNostrTools() {
@@ -24,7 +24,7 @@ async function loadNostrTools() {
  */
 async function getTapestryAssistantNsec() {
   const { stdout } = await execAsync(
-    `docker exec ${CONTAINER} bash -c 'source /etc/brainstorm.conf && echo $BRAINSTORM_RELAY_NSEC'`,
+    `docker exec ${getConfig('docker.container')} bash -c 'source /etc/brainstorm.conf && echo $BRAINSTORM_RELAY_NSEC'`,
     { timeout: 10000 }
   );
   return stdout.trim();

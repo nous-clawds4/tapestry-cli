@@ -10,17 +10,11 @@
  *   tapestry concept schema dog --content '{"type":"object","properties":{"breed":{"type":"string"}}}'
  */
 
-import { exec as execCb } from 'child_process';
-import { promisify } from 'util';
 import { randomBytes } from 'crypto';
-import { writeFileSync, unlinkSync } from 'fs';
 import { apiGet } from '../lib/api.js';
 import { signEvent } from '../lib/signer.js';
-
-const execAsync = promisify(execCb);
-const CONTAINER = 'tapestry-tapestry-1';
-const JSON_SCHEMA_CONCEPT_UUID = '39998:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:bba896cc-c190-4e26-a26f-66d678d4ac89';
-const RELATIONSHIP_CONCEPT_UUID = '39998:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:c15357e6-6665-45cc-8ea5-0320b8026f05';
+import { importEventsAndSync } from '../lib/neo4j.js';
+import { uuid } from '../lib/config.js';
 
 async function cypher(query) {
   const encoded = encodeURIComponent(query);
@@ -95,47 +89,8 @@ async function findUnwiredSchema(conceptName) {
   return rows;
 }
 
-function cleanEvent(event) {
-  return {
-    id: event.id,
-    pubkey: event.pubkey,
-    created_at: event.created_at,
-    kind: event.kind,
-    tags: event.tags,
-    content: event.content,
-    sig: event.sig,
-  };
-}
-
 async function importEvents(events) {
-  const tmpFile = `/tmp/tapestry_schema_${Date.now()}.jsonl`;
-  writeFileSync(tmpFile, events.map(e => JSON.stringify(cleanEvent(e))).join('\n') + '\n');
-  try {
-    const { stdout } = await execAsync(
-      `docker exec -i ${CONTAINER} strfry import < ${tmpFile} 2>&1`,
-      { timeout: 30000 }
-    );
-    const m = stdout.match(/(\d+) added/);
-    console.log(`  ✅ ${m ? m[1] : events.length} event(s) written to strfry`);
-  } catch (err) {
-    console.error(`  ❌ strfry import failed: ${err.message}`);
-    throw err;
-  } finally {
-    try { unlinkSync(tmpFile); } catch {}
-  }
-}
-
-async function updateNeo4j() {
-  console.log('  📊 Updating Neo4j...');
-  await execAsync(
-    `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/batchTransfer.sh`,
-    { timeout: 120000 }
-  );
-  await execAsync(
-    `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/setup.sh`,
-    { timeout: 60000 }
-  );
-  console.log('  ✅ Neo4j updated — labels and relationships applied');
+  await importEventsAndSync(events);
 }
 
 export function schemaCommand(concept) {
@@ -242,7 +197,7 @@ async function createAndWireSchema(conceptUuid, conceptDisplayName, conceptSearc
     console.log(`\n  🏜️  Dry run — would create:\n`);
     console.log(`     1. JSONSchema node (kind 39999):`);
     console.log(`        name: "${schemaName}"`);
-    console.log(`        z-tag: ${JSON_SCHEMA_CONCEPT_UUID}`);
+    console.log(`        z-tag: ${uuid('jsonSchema')}`);
     console.log(`        content: ${content || '(empty)'}`);
     console.log(`     2. IS_THE_JSON_SCHEMA_FOR Relationship (kind 39999):`);
     console.log(`        nodeFrom: <schema uuid>`);
@@ -258,7 +213,7 @@ async function createAndWireSchema(conceptUuid, conceptDisplayName, conceptSearc
     ['name', schemaName],
     ['slug', slug],
     ['title', schemaName.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')],
-    ['z', JSON_SCHEMA_CONCEPT_UUID],
+    ['z', uuid('jsonSchema')],
   ];
   if (content) {
     tags.push(['json', content]);
@@ -281,7 +236,7 @@ async function createAndWireSchema(conceptUuid, conceptDisplayName, conceptSearc
     tags: [
       ['d', relDTag],
       ['name', `${schemaName} IS_THE_JSON_SCHEMA_FOR ${conceptDisplayName}`],
-      ['z', RELATIONSHIP_CONCEPT_UUID],
+      ['z', uuid('relationship')],
       ['nodeFrom', schemaUuid],
       ['nodeTo', conceptUuid],
       ['relationshipType', 'IS_THE_JSON_SCHEMA_FOR'],
@@ -292,11 +247,8 @@ async function createAndWireSchema(conceptUuid, conceptDisplayName, conceptSearc
   console.log(`  ✅ Signed: ${relEvent.id.slice(0, 12)}... (by ${relEvent._signerLabel || relEvent.pubkey.slice(0, 12)})`);
 
   // Import both events
-  console.log('\n  📡 Importing to strfry...');
+  console.log('\n  📡 Importing...');
   await importEvents([schemaEvent, relEvent]);
-
-  // Update Neo4j
-  await updateNeo4j();
 
   console.log(`\n✨ JSON Schema created and wired for "${conceptDisplayName}"!`);
   console.log(`   ${schemaUuid} → IS_THE_JSON_SCHEMA_FOR → ${conceptUuid}\n`);
@@ -329,7 +281,7 @@ async function rewireProperties(oldSchemaUuid, newSchemaUuid, opts) {
       tags: [
         ['d', relDTag],
         ['name', `${prop.name || 'property'} IS_A_PROPERTY_OF ${newSchemaUuid}`],
-        ['z', RELATIONSHIP_CONCEPT_UUID],
+        ['z', uuid('relationship')],
         ['nodeFrom', prop.uuid],
         ['nodeTo', newSchemaUuid],
         ['relationshipType', 'IS_A_PROPERTY_OF'],
@@ -342,7 +294,6 @@ async function rewireProperties(oldSchemaUuid, newSchemaUuid, opts) {
 
   console.log('\n  📡 Importing rewired relationships...');
   await importEvents(events);
-  await updateNeo4j();
 }
 
 async function wireSchema(schemaUuid, conceptUuid, conceptName, opts) {
@@ -363,7 +314,7 @@ async function wireSchema(schemaUuid, conceptUuid, conceptName, opts) {
     tags: [
       ['d', relDTag],
       ['name', `schema IS_THE_JSON_SCHEMA_FOR ${conceptName}`],
-      ['z', RELATIONSHIP_CONCEPT_UUID],
+      ['z', uuid('relationship')],
       ['nodeFrom', schemaUuid],
       ['nodeTo', conceptUuid],
       ['relationshipType', 'IS_THE_JSON_SCHEMA_FOR'],
@@ -373,10 +324,8 @@ async function wireSchema(schemaUuid, conceptUuid, conceptName, opts) {
 
   console.log(`  ✅ Signed: ${relEvent.id.slice(0, 12)}...`);
 
-  console.log('\n  📡 Importing to strfry...');
+  console.log('\n  📡 Importing...');
   await importEvents([relEvent]);
-
-  await updateNeo4j();
 
   console.log(`\n✨ Wired: ${schemaUuid} → IS_THE_JSON_SCHEMA_FOR → ${conceptUuid}\n`);
 }

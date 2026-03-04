@@ -15,6 +15,10 @@ import { conceptCommand } from '../src/commands/concept.js';
 import { normalizeCommand } from '../src/commands/normalize.js';
 import { setCommand } from '../src/commands/set.js';
 import { forkCommand } from '../src/commands/fork.js';
+import { eventCommand } from '../src/commands/event.js';
+import { configCommand } from '../src/commands/config.js';
+import { auditCommand } from '../src/commands/audit.js';
+import { propertyCommand } from '../src/commands/property.js';
 
 // Load .env from project root
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -47,5 +51,9 @@ conceptCommand(program);
 normalizeCommand(program);
 setCommand(program);
 forkCommand(program);
+eventCommand(program);
+configCommand(program);
+auditCommand(program);
+propertyCommand(program);
 
 program.parse();

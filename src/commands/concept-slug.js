@@ -11,9 +11,10 @@ import { promisify } from 'util';
 import { writeFileSync, unlinkSync } from 'fs';
 import { apiGet } from '../lib/api.js';
 import { signEvent } from '../lib/signer.js';
+import { importToNeo4j } from '../lib/neo4j.js';
+import { getConfig } from '../lib/config.js';
 
 const execAsync = promisify(execCb);
-const CONTAINER = 'tapestry-tapestry-1';
 
 async function cypher(query) {
   const encoded = encodeURIComponent(query);
@@ -122,7 +123,7 @@ async function handleSlug(conceptName, slugValue, opts) {
 
   const escapedFilter = filter.replace(/'/g, "'\\''");
   const { stdout: eventJson } = await execAsync(
-    `docker exec ${CONTAINER} strfry scan '${escapedFilter}' 2>/dev/null`,
+    `docker exec ${getConfig('docker.container')} strfry scan '${escapedFilter}' 2>/dev/null`,
     { timeout: 15000 }
   );
 
@@ -174,7 +175,7 @@ async function handleSlug(conceptName, slugValue, opts) {
   writeFileSync(tmpFile, JSON.stringify(clean) + '\n');
   try {
     const { stdout } = await execAsync(
-      `docker exec -i ${CONTAINER} strfry import < ${tmpFile} 2>&1`,
+      `docker exec -i ${getConfig('docker.container')} strfry import < ${tmpFile} 2>&1`,
       { timeout: 30000 }
     );
     console.log(`  ✅ Event written to strfry`);
@@ -182,17 +183,9 @@ async function handleSlug(conceptName, slugValue, opts) {
     try { unlinkSync(tmpFile); } catch {}
   }
 
-  // Update Neo4j
-  console.log('  📊 Updating Neo4j...');
-  await execAsync(
-    `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/batchTransfer.sh`,
-    { timeout: 120000 }
-  );
-  await execAsync(
-    `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/setup.sh`,
-    { timeout: 60000 }
-  );
-  console.log('  ✅ Neo4j updated');
+  // Update Neo4j (targeted)
+  console.log('  📊 Updating Neo4j (targeted)...');
+  await importToNeo4j([newEvent]);
 
   console.log(`\n✨ Slug "${slugValue}" set for concept "${concept.name}"!\n`);
 }

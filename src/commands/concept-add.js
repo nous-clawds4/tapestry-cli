@@ -7,9 +7,10 @@ import { promisify } from 'util';
 import { randomBytes } from 'crypto';
 import { apiGet } from '../lib/api.js';
 import { signEvent } from '../lib/signer.js';
+import { importEventsAndSync } from '../lib/neo4j.js';
+import { getConfig } from '../lib/config.js';
 
 const execAsync = promisify(execCb);
-const CONTAINER = 'tapestry-tapestry-1';
 
 /**
  * Run a Cypher query and return parsed results.
@@ -112,7 +113,7 @@ async function addItem(conceptName, itemName, opts) {
   console.log('\n  📡 Importing to local strfry...');
   try {
     const eventJson = JSON.stringify(event);
-    const cmd = `echo '${eventJson.replace(/'/g, "'\\''")}' | docker exec -i ${CONTAINER} strfry import 2>&1`;
+    const cmd = `echo '${eventJson.replace(/'/g, "'\\''")}' | docker exec -i ${getConfig('docker.container')} strfry import 2>&1`;
     const { stdout, stderr } = await execAsync(cmd, { timeout: 30000 });
     const output = (stdout || '') + (stderr || '');
     const summaryMatch = output.match(/(\d+) added, (\d+) rejected, (\d+) dups/);
@@ -142,7 +143,7 @@ async function addItem(conceptName, itemName, opts) {
     ];
     for (const relay of relays) {
       try {
-        const cmd = `docker exec ${CONTAINER} strfry sync ${relay} --filter '{"ids":["${event.id}"]}' --dir up 2>&1`;
+        const cmd = `docker exec ${getConfig('docker.container')} strfry sync ${relay} --filter '{"ids":["${event.id}"]}' --dir up 2>&1`;
         await execAsync(cmd, { timeout: 30000 });
         console.log(`     ✅ ${relay}`);
       } catch (err) {
@@ -151,24 +152,14 @@ async function addItem(conceptName, itemName, opts) {
     }
   }
 
-  // Import into Neo4j
+  // Import into Neo4j (targeted)
   if (opts.import !== false) {
-    console.log('\n  📊 Importing into Neo4j...');
+    console.log('\n  📊 Importing into Neo4j (targeted)...');
     try {
-      const { stdout } = await execAsync(
-        `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/batchTransfer.sh`,
-        { timeout: 120000 }
-      );
-      await execAsync(
-        `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/setup.sh`,
-        { timeout: 60000 }
-      );
-      const eventMatch = stdout.match(/Found (\d+) events/);
-      const tagMatch = stdout.match(/Created (\d+) tag objects/);
-      console.log(`  ✅ ${eventMatch?.[1] || '?'} events → ${tagMatch?.[1] || '?'} tags`);
-      console.log('  ✅ Labels and relationships applied');
+      const { importToNeo4j } = await import('../lib/neo4j.js');
+      await importToNeo4j([event]);
     } catch (err) {
-      console.error(`  ❌ Import failed: ${err.message}`);
+      console.error(`  ❌ Neo4j import failed: ${err.message}`);
     }
   }
 

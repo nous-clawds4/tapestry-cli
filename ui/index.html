@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tapestry — Concept Graph Explorer</title>
+  <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
   <style>
     :root {
       --bg: #0d1117;
@@ -228,6 +229,44 @@
       color: var(--purple);
       margin-left: 4px;
     }
+
+    #class-thread-container, #property-tree-container {
+      width: 100%;
+      height: 500px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      position: relative;
+    }
+    #class-thread-container .vis-network,
+    #property-tree-container .vis-network {
+      outline: none;
+    }
+    .tree-legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .tree-legend span::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .tree-legend .leg-concept::before { background: #58a6ff; }
+    .tree-legend .leg-header::before { background: #58a6ff; }
+    .tree-legend .leg-schema::before { background: #3fb950; }
+    .tree-legend .leg-superset::before { background: #3fb950; }
+    .tree-legend .leg-property::before { background: #d29922; }
+    .tree-legend .leg-set::before { background: #d29922; }
+    .tree-legend .leg-enum::before { background: #bc8cff; }
+    .tree-legend .leg-element::before { background: #bc8cff; }
   </style>
 </head>
 <body>
@@ -346,7 +385,7 @@ async function showList() {
   app.innerHTML = '<div class="loading">Loading concepts...</div>';
 
   try {
-    // Get concepts with stats
+    // Get concepts with stats (aggregate across all schemas to avoid duplicates)
     const concepts = await cypher(`
       MATCH (h)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'})
       WHERE h:ListHeader OR h:ListItem
@@ -354,26 +393,33 @@ async function showList() {
       OPTIONAL MATCH (js:JSONSchema)-[:IS_THE_JSON_SCHEMA_FOR]->(h)
       OPTIONAL MATCH (js)-[:HAS_TAG]->(jt:NostrEventTag {type: 'json'})
       OPTIONAL MATCH (p:Property)-[:IS_A_PROPERTY_OF]->(js)
+      WITH h, t,
+        max(CASE WHEN s IS NOT NULL THEN 1 ELSE 0 END) AS hasSupersetNum,
+        max(CASE WHEN js IS NOT NULL THEN 1 ELSE 0 END) AS hasSchemaNum,
+        max(CASE WHEN jt.value IS NOT NULL THEN 1 ELSE 0 END) AS hasSchemaContentNum,
+        count(DISTINCT p) AS propCount
       RETURN DISTINCT
         h.uuid AS uuid,
         t.value AS name,
         t.value1 AS plural,
         h.pubkey AS author,
-        CASE WHEN s IS NOT NULL THEN 'yes' ELSE 'no' END AS hasSuperset,
-        CASE WHEN js IS NOT NULL THEN 'yes' ELSE 'no' END AS hasSchema,
-        CASE WHEN jt.value IS NOT NULL THEN 'yes' ELSE 'no' END AS hasSchemaContent,
-        count(DISTINCT p) AS propCount
+        CASE WHEN hasSupersetNum = 1 THEN 'yes' ELSE 'no' END AS hasSuperset,
+        CASE WHEN hasSchemaNum = 1 THEN 'yes' ELSE 'no' END AS hasSchema,
+        CASE WHEN hasSchemaContentNum = 1 THEN 'yes' ELSE 'no' END AS hasSchemaContent,
+        propCount
       ORDER BY name
     `);
 
-    // Get item counts separately (simpler query)
+    // Get item counts: explicit (HAS_ELEMENT) + implicit (z-tag)
     const itemCounts = await cypher(`
-      MATCH (h)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'}),
-            (h)-[:HAS_TAG]->(d:NostrEventTag {type: 'd'})
+      MATCH (h)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'})
       WHERE h:ListHeader OR h:ListItem
-      OPTIONAL MATCH (i:ListItem)-[:HAS_TAG]->(z:NostrEventTag {type: 'z'})
-      WHERE z.value ENDS WITH d.value
-      RETURN h.uuid AS uuid, count(DISTINCT i) AS items
+      OPTIONAL MATCH (h)-[:IS_THE_CONCEPT_FOR]->(s:Superset)-[:IS_A_SUPERSET_OF*0..5]->(ss)-[:HAS_ELEMENT]->(eExplicit:ListItem)
+      OPTIONAL MATCH (eImplicit:ListItem)-[:HAS_TAG]->(z:NostrEventTag {type: 'z', value: h.uuid})
+      WITH h, collect(DISTINCT eExplicit.uuid) + collect(DISTINCT eImplicit.uuid) AS allUuids
+      UNWIND allUuids AS uid
+      WITH h, collect(DISTINCT uid) AS uniqueUuids
+      RETURN h.uuid AS uuid, size(uniqueUuids) AS items
     `);
     const countMap = {};
     itemCounts.forEach(r => { countMap[r.uuid] = parseInt(r.items) || 0; });
@@ -465,6 +511,29 @@ async function showDetail(uuid) {
       RETURN child.uuid AS uuid, n.value AS name
     `);
 
+    // Sets (sub-categories under this concept's superset hierarchy)
+    const sets = await cypher(`
+      MATCH (h {uuid: '${uuid}'})-[:IS_THE_CONCEPT_FOR]->(s:Superset)-[:IS_A_SUPERSET_OF*1..5]->(child)
+      WHERE child:Set OR child:Superset
+      OPTIONAL MATCH (child)-[:HAS_TAG]->(n:NostrEventTag {type: 'name'})
+      RETURN DISTINCT child.uuid AS uuid, n.value AS name, labels(child) AS labels
+    `);
+
+    // Set-to-set edges (for multi-level hierarchy)
+    const setEdges = await cypher(`
+      MATCH (h {uuid: '${uuid}'})-[:IS_THE_CONCEPT_FOR]->(s:Superset)-[:IS_A_SUPERSET_OF*0..5]->(parent)-[:IS_A_SUPERSET_OF]->(child)
+      WHERE (child:Set OR child:Superset) AND (parent:Set OR parent:Superset)
+      RETURN DISTINCT parent.uuid AS fromUuid, child.uuid AS toUuid
+    `);
+
+    // Elements per set/superset (direct HAS_ELEMENT only)
+    const setElements = await cypher(`
+      MATCH (h {uuid: '${uuid}'})-[:IS_THE_CONCEPT_FOR]->(s:Superset)-[:IS_A_SUPERSET_OF*0..5]->(ss)-[:HAS_ELEMENT]->(elem:ListItem)
+      WHERE NOT elem:Set AND NOT elem:Superset
+      OPTIONAL MATCH (elem)-[:HAS_TAG]->(n:NostrEventTag {type: 'name'})
+      RETURN DISTINCT ss.uuid AS parentUuid, elem.uuid AS uuid, n.value AS name
+    `);
+
     // Parent supersets (what concepts is this a superset of?)
     const parentSupersets = await cypher(`
       MATCH (h {uuid: '${uuid}'})-[:IS_THE_CONCEPT_FOR]->(s:Superset)
@@ -474,12 +543,14 @@ async function showDetail(uuid) {
     `);
 
     // JSON Schema (prefer ones with json content, deduplicate by uuid)
+    // Use collect() to avoid cross-product from multiple name/json tags
     const schemasRaw = await cypher(`
       MATCH (js:JSONSchema)-[:IS_THE_JSON_SCHEMA_FOR]->(h {uuid: '${uuid}'})
       OPTIONAL MATCH (js)-[:HAS_TAG]->(n:NostrEventTag {type: 'name'})
       OPTIONAL MATCH (js)-[:HAS_TAG]->(j:NostrEventTag {type: 'json'})
-      RETURN DISTINCT js.uuid AS uuid, n.value AS name, j.value AS json, js.pubkey AS author
-      ORDER BY j.value DESC
+      WITH js, head(collect(DISTINCT n.value)) AS name, head(collect(DISTINCT j.value)) AS json
+      RETURN DISTINCT js.uuid AS uuid, name, json, js.pubkey AS author
+      ORDER BY json DESC
     `);
     const schemasSeen = new Set();
     const schemas = schemasRaw.filter(s => {
@@ -510,21 +581,59 @@ async function showDetail(uuid) {
       return true;
     });
 
-    // Elements (deduplicate by name — prefer ones with json data)
-    const elemRaw = await cypher(`
+    // Elements — find both explicit (HAS_ELEMENT) and implicit (z-tag) bindings
+    // Explicit: connected via Superset → HAS_ELEMENT
+    const explicitRaw = await cypher(`
       MATCH (h {uuid: '${uuid}'})-[:IS_THE_CONCEPT_FOR]->(s:Superset)-[:IS_A_SUPERSET_OF*0..5]->(ss)-[:HAS_ELEMENT]->(e:ListItem)
       OPTIONAL MATCH (e)-[:HAS_TAG]->(n:NostrEventTag {type: 'name'})
       OPTIONAL MATCH (e)-[:HAS_TAG]->(j:NostrEventTag {type: 'json'})
       RETURN DISTINCT e.uuid AS uuid, n.value AS name, j.value AS json, e.pubkey AS author
-      ORDER BY j.value DESC, name
     `);
-    // Prefer elements with json data over ones without
+    const explicitUuids = new Set(explicitRaw.map(e => e.uuid));
+
+    // Implicit: z-tag points to the concept's uuid
+    const implicitRaw = await cypher(`
+      MATCH (e:ListItem)-[:HAS_TAG]->(z:NostrEventTag {type: 'z', value: '${uuid}'})
+      OPTIONAL MATCH (e)-[:HAS_TAG]->(n:NostrEventTag {type: 'name'})
+      OPTIONAL MATCH (e)-[:HAS_TAG]->(j:NostrEventTag {type: 'json'})
+      RETURN DISTINCT e.uuid AS uuid, n.value AS name, j.value AS json, e.pubkey AS author
+    `);
+
+    // Merge: tag each element with its binding type
+    const elemByUuid = {};
+    for (const e of explicitRaw) {
+      elemByUuid[e.uuid] = { ...e, binding: 'explicit' };
+    }
+    for (const e of implicitRaw) {
+      if (elemByUuid[e.uuid]) {
+        elemByUuid[e.uuid].binding = 'both';
+        // Prefer json data if the implicit version has it
+        if (e.json && e.json !== 'NULL' && (!elemByUuid[e.uuid].json || elemByUuid[e.uuid].json === 'NULL')) {
+          elemByUuid[e.uuid].json = e.json;
+        }
+      } else {
+        elemByUuid[e.uuid] = { ...e, binding: 'implicit' };
+      }
+    }
+
+    // Deduplicate by name — prefer ones with json data, then explicit > both > implicit
     const elemByName = {};
-    for (const e of elemRaw) {
+    for (const e of Object.values(elemByUuid)) {
       const key = e.name || e.uuid;
       const hasJson = e.json && e.json !== 'NULL';
-      if (!elemByName[key] || (hasJson && !(elemByName[key].json && elemByName[key].json !== 'NULL'))) {
+      const existing = elemByName[key];
+      if (!existing) {
         elemByName[key] = e;
+      } else {
+        const existingHasJson = existing.json && existing.json !== 'NULL';
+        if (hasJson && !existingHasJson) {
+          elemByName[key] = e;
+        } else if (hasJson === existingHasJson) {
+          // Merge binding types
+          const bindings = new Set([existing.binding, e.binding]);
+          if (bindings.has('explicit') && bindings.has('implicit')) existing.binding = 'both';
+          else if (bindings.has('both')) existing.binding = 'both';
+        }
       }
     }
     const elements = Object.values(elemByName).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -573,22 +682,15 @@ async function showDetail(uuid) {
     // Class Thread
     html += `<div class="section"><h4>🧵 Class Thread</h4>`;
     if (supersets.length > 0) {
-      html += `<table><tr><th>Phase</th><th>Node</th><th>UUID</th></tr>`;
-      html += `<tr><td>Initiation</td><td>${concept.name} → IS_THE_CONCEPT_FOR</td><td class="mono">${shortUuid(concept.uuid)}</td></tr>`;
-      for (const s of supersets) {
-        html += `<tr><td>Superset</td><td>${s.name || 'unnamed'}</td><td class="mono">${shortUuid(s.uuid)}</td></tr>`;
-      }
-      if (parentSupersets.length > 0) {
-        for (const ps of parentSupersets) {
-          html += `<tr><td>↑ Parent</td><td>${ps.name || 'unnamed'}</td><td class="mono">${shortUuid(ps.uuid)}</td></tr>`;
-        }
-      }
-      if (subSupersets.length > 0) {
-        for (const ss of subSupersets) {
-          html += `<tr><td>↓ Child</td><td>${ss.name || 'unnamed'}</td><td class="mono">${shortUuid(ss.uuid)}</td></tr>`;
-        }
-      }
-      html += `</table>`;
+      html += `<div id="class-thread-container"></div>`;
+      html += `<div class="tree-legend">
+        <span class="leg-header">ListHeader</span>
+        <span class="leg-superset">Superset</span>
+        <span class="leg-set">Set</span>
+        <span class="leg-element">Element</span>
+      </div>`;
+      // Schedule render after DOM
+      setTimeout(() => renderClassThread(concept, supersets, subSupersets, parentSupersets, sets, setEdges, setElements), 50);
     } else {
       html += `<p class="empty">No superset node (Rule 1 violation)</p>`;
     }
@@ -633,6 +735,22 @@ async function showDetail(uuid) {
     }
     html += `</div>`;
 
+    // Property Tree Visualization
+    if (properties.length > 0) {
+      html += `<div class="section"><h4>🌳 Property Tree</h4>`;
+      html += `<div id="property-tree-container"></div>`;
+      html += `<div class="tree-legend">
+        <span class="leg-concept">Concept</span>
+        <span class="leg-schema">JSON Schema</span>
+        <span class="leg-property">Property</span>
+        <span class="leg-enum">Enumerating Concept</span>
+      </div>`;
+      html += `</div>`;
+
+      // Schedule tree render after DOM update
+      setTimeout(() => renderPropertyTree(concept, schemas, properties, enumeratesOut), 50);
+    }
+
     // ENUMERATES (outgoing)
     if (enumeratesOut.length > 0) {
       html += `<div class="section"><h4>🔗 Enumerates (Horizontal Integration)</h4>`;
@@ -648,23 +766,39 @@ async function showDetail(uuid) {
     }
 
     // Elements
+    const explicitCount = elements.filter(e => e.binding === 'explicit').length;
+    const implicitCount = elements.filter(e => e.binding === 'implicit').length;
+    const bothCount = elements.filter(e => e.binding === 'both').length;
+    const bindingSummary = [
+      explicitCount > 0 ? `${explicitCount} explicit` : '',
+      implicitCount > 0 ? `${implicitCount} implicit` : '',
+      bothCount > 0 ? `${bothCount} both` : '',
+    ].filter(Boolean).join(', ');
+
     html += `<div class="section"><h4>📦 Elements (${elements.length})</h4>`;
     if (elements.length > 0) {
-      html += `<table><tr><th>Name</th><th>Author</th><th>JSON Data</th></tr>`;
+      html += `<p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">${bindingSummary}</p>`;
+      html += `<table><tr><th>Name</th><th>Binding</th><th>Author</th><th>JSON Data</th></tr>`;
       for (const e of elements) {
         let jsonCell = '<span class="empty">—</span>';
         if (e.json) {
           jsonCell = `<div class="json-block" style="font-size:11px;max-height:120px;overflow:auto">${escapeHtml(prettyJson(e.json))}</div>`;
         }
+        let bindingBadge = '';
+        if (e.binding === 'explicit') bindingBadge = '<span class="badge badge-green">explicit</span>';
+        else if (e.binding === 'implicit') bindingBadge = '<span class="badge badge-orange">implicit</span>';
+        else if (e.binding === 'both') bindingBadge = '<span class="badge badge-green">explicit</span> <span class="badge badge-orange">implicit</span>';
+
         html += `<tr>
           <td><strong>${e.name || 'unnamed'}</strong></td>
+          <td>${bindingBadge}</td>
           <td style="font-size:12px;color:var(--text-muted)">${authorName(e.author)}</td>
           <td>${jsonCell}</td>
         </tr>`;
       }
       html += `</table>`;
     } else {
-      html += `<p class="empty">No elements</p>`;
+      html += `<p class="empty">No elements (explicit or implicit)</p>`;
     }
     html += `</div>`;
 
@@ -723,6 +857,434 @@ function prettyJson(str) {
 
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ─── Class Thread Visualization ──────────────────────────────
+
+function renderClassThread(concept, supersets, subSupersets, parentSupersets, sets, setEdges, setElements) {
+  const container = document.getElementById('class-thread-container');
+  if (!container) return;
+
+  const nodes = [];
+  const edges = [];
+  const uuidToId = {};
+  let nextId = 1;
+
+  function getId(uuid) {
+    if (!uuidToId[uuid]) uuidToId[uuid] = nextId++;
+    return uuidToId[uuid];
+  }
+
+  // --- Node styles ---
+  const headerStyle = {
+    shape: 'box',
+    color: { background: '#1a3a5c', border: '#58a6ff', highlight: { background: '#1e4a70', border: '#79c0ff' } },
+    font: { color: '#e6edf3', size: 14, bold: true },
+    borderWidth: 2, margin: 10,
+  };
+  const supersetStyle = {
+    shape: 'box',
+    color: { background: '#1a3d2a', border: '#3fb950', highlight: { background: '#1e4d30', border: '#56d364' } },
+    font: { color: '#e6edf3', size: 13 },
+    borderWidth: 2, margin: 8,
+  };
+  const setStyle = {
+    shape: 'box',
+    color: { background: '#3d2e10', border: '#d29922', highlight: { background: '#4d3a15', border: '#e3b341' } },
+    font: { color: '#e6edf3', size: 12 },
+    borderWidth: 2, margin: 8,
+  };
+  const elementStyle = {
+    shape: 'ellipse',
+    color: { background: '#2a1f3d', border: '#bc8cff', highlight: { background: '#35274d', border: '#d2a8ff' } },
+    font: { color: '#e6edf3', size: 11 },
+    borderWidth: 1, margin: 6,
+  };
+  const edgeStyle = {
+    color: { color: '#30363d', highlight: '#58a6ff' },
+    font: { color: '#8b949e', size: 9, strokeWidth: 0 },
+    arrows: { to: { enabled: true, type: 'arrow' } },
+  };
+
+  // --- ListHeader (root) ---
+  const headerId = getId(concept.uuid);
+  nodes.push({ id: headerId, label: concept.name || 'ListHeader', ...headerStyle });
+
+  // --- Superset(s) ---
+  for (const s of supersets) {
+    const sid = getId(s.uuid);
+    nodes.push({ id: sid, label: s.name || 'Superset', ...supersetStyle });
+    edges.push({ from: headerId, to: sid, label: 'IS_THE_CONCEPT_FOR', ...edgeStyle });
+  }
+
+  // --- Parent supersets ---
+  for (const ps of parentSupersets) {
+    const pid = getId(ps.uuid);
+    if (!nodes.find(n => n.id === pid)) {
+      nodes.push({ id: pid, label: ps.name || 'Parent Superset', ...supersetStyle,
+        font: { ...supersetStyle.font, size: 11 },
+        color: { ...supersetStyle.color, border: '#238636' },
+      });
+    }
+    for (const s of supersets) {
+      edges.push({ from: pid, to: getId(s.uuid), label: 'IS_A_SUPERSET_OF', ...edgeStyle, dashes: true });
+    }
+  }
+
+  // --- Sub-supersets / Sets ---
+  for (const child of subSupersets) {
+    const cid = getId(child.uuid);
+    if (!nodes.find(n => n.id === cid)) {
+      nodes.push({ id: cid, label: child.name || 'Sub-superset', ...supersetStyle,
+        font: { ...supersetStyle.font, size: 12 },
+      });
+    }
+  }
+  for (const child of sets) {
+    const cid = getId(child.uuid);
+    if (!nodes.find(n => n.id === cid)) {
+      const isSet = child.labels && child.labels.includes('Set');
+      nodes.push({ id: cid, label: child.name || 'Set', ...(isSet ? setStyle : supersetStyle) });
+    }
+  }
+
+  // --- Edges between sets/supersets ---
+  for (const e of setEdges) {
+    const fromId = getId(e.fromUuid);
+    const toId = getId(e.toUuid);
+    // Avoid duplicate edges
+    if (!edges.find(ex => ex.from === fromId && ex.to === toId)) {
+      edges.push({ from: fromId, to: toId, label: 'IS_A_SUPERSET_OF', ...edgeStyle });
+    }
+  }
+  // Connect superset → direct children if not already connected via setEdges
+  for (const s of supersets) {
+    for (const child of subSupersets) {
+      const fromId = getId(s.uuid);
+      const toId = getId(child.uuid);
+      if (!edges.find(ex => ex.from === fromId && ex.to === toId)) {
+        edges.push({ from: fromId, to: toId, label: 'IS_A_SUPERSET_OF', ...edgeStyle });
+      }
+    }
+  }
+
+  // --- Elements (collapsed by default) ---
+  // Group by parent for toggle
+  const elemsByParent = {};
+  for (const e of setElements) {
+    if (!elemsByParent[e.parentUuid]) elemsByParent[e.parentUuid] = [];
+    elemsByParent[e.parentUuid].push(e);
+  }
+
+  // Prepare element nodes/edges (not added yet — collapsed by default)
+  const elementNodesById = {}; // eid -> node object
+  const elementEdgesByParent = {}; // parentUuid -> [edge objects]
+  const expandedSets = new Set(); // track which parents are expanded
+
+  for (const [parentUuid, elems] of Object.entries(elemsByParent)) {
+    const parentId = getId(parentUuid);
+    elementEdgesByParent[parentUuid] = [];
+    for (const elem of elems) {
+      const eid = getId(elem.uuid);
+      if (!elementNodesById[eid]) {
+        elementNodesById[eid] = { id: eid, label: elem.name || 'element', ...elementStyle, level: 3 };
+      }
+      elementEdgesByParent[parentUuid].push({
+        id: `e-${parentId}-${eid}`,
+        from: parentId, to: eid, label: 'HAS_ELEMENT', ...edgeStyle,
+        color: { color: '#bc8cff33', highlight: '#bc8cff' },
+        font: { color: '#8b949e', size: 8, strokeWidth: 0 },
+      });
+    }
+  }
+
+  // Append element count to Set/Superset node labels
+  for (const [parentUuid, elems] of Object.entries(elemsByParent)) {
+    const parentId = getId(parentUuid);
+    const node = nodes.find(n => n.id === parentId);
+    if (node) {
+      node.label = `${node.label} [+${elems.length}]`;
+      node._origLabel = node.label;
+      node._parentUuid = parentUuid;
+    }
+  }
+
+  // --- Layout ---
+  // Assign levels for hierarchical layout
+  // Header = 0, Superset = 1, Parent = -1, Sets = 2, Elements = 3
+  for (const n of nodes) {
+    if (n.id === headerId) { n.level = 0; continue; }
+    const uuid = Object.entries(uuidToId).find(([, id]) => id === n.id)?.[0];
+    if (!uuid) continue;
+    if (supersets.find(s => s.uuid === uuid)) { n.level = 1; continue; }
+    if (parentSupersets.find(p => p.uuid === uuid)) { n.level = 0; continue; } // same level as header, to the side
+    if (subSupersets.find(s => s.uuid === uuid) || sets.find(s => s.uuid === uuid)) { n.level = 2; continue; }
+    // Fallback (shouldn't reach here with elements hidden)
+    n.level = 2;
+  }
+
+  // Adjust container height (elements hidden initially, so keep compact)
+  const setCount = nodes.filter(n => n.level === 2).length;
+  const height = Math.min(800, Math.max(400, setCount * 50 + 300));
+  container.style.height = height + 'px';
+
+  const nodeDataSet = new vis.DataSet(nodes);
+  const edgeDataSet = new vis.DataSet(edges);
+  const data = { nodes: nodeDataSet, edges: edgeDataSet };
+
+  const options = {
+    layout: {
+      hierarchical: {
+        direction: 'UD',
+        sortMethod: 'directed',
+        levelSeparation: 120,
+        nodeSpacing: 100,
+        treeSpacing: 150,
+      },
+    },
+    physics: false,
+    interaction: {
+      hover: true,
+      tooltipDelay: 200,
+      zoomView: true,
+      dragView: true,
+    },
+    edges: {
+      smooth: {
+        type: 'cubicBezier',
+        forceDirection: 'vertical',
+        roundness: 0.4,
+      },
+    },
+  };
+
+  const network = new vis.Network(container, data, options);
+  network.once('afterDrawing', () => { network.fit({ animation: false }); });
+
+  // --- Click to toggle elements ---
+  network.on('click', function(params) {
+    if (params.nodes.length !== 1) return;
+    const clickedId = params.nodes[0];
+    // Find which parentUuid this node corresponds to
+    const parentUuid = Object.entries(uuidToId).find(([, id]) => id === clickedId)?.[0];
+    if (!parentUuid || !elemsByParent[parentUuid]) return;
+
+    const elems = elementEdgesByParent[parentUuid] || [];
+    if (expandedSets.has(parentUuid)) {
+      // Collapse: remove element nodes & edges for this parent
+      expandedSets.delete(parentUuid);
+      const edgeIds = elems.map(e => e.id);
+      edgeDataSet.remove(edgeIds);
+      // Remove element nodes only if not connected to another expanded parent
+      const elemNodeIds = elems.map(e => e.to);
+      for (const eid of elemNodeIds) {
+        const stillUsed = [...expandedSets].some(pu =>
+          (elementEdgesByParent[pu] || []).some(e => e.to === eid)
+        );
+        if (!stillUsed) nodeDataSet.remove(eid);
+      }
+      // Update label back to collapsed
+      const node = nodeDataSet.get(clickedId);
+      if (node) {
+        nodeDataSet.update({ id: clickedId, label: node.label.replace(' [−', ' [+') });
+      }
+      // Shrink container
+      container.style.height = Math.min(800, Math.max(400, setCount * 50 + 300)) + 'px';
+    } else {
+      // Expand: add element nodes & edges
+      expandedSets.add(parentUuid);
+      const elemNodeIds = elems.map(e => e.to);
+      for (const eid of elemNodeIds) {
+        if (!nodeDataSet.get(eid) && elementNodesById[eid]) {
+          nodeDataSet.add(elementNodesById[eid]);
+        }
+      }
+      edgeDataSet.add(elems);
+      // Update label to expanded
+      const node = nodeDataSet.get(clickedId);
+      if (node) {
+        nodeDataSet.update({ id: clickedId, label: node.label.replace(' [+', ' [−') });
+      }
+      // Grow container for elements
+      const totalElems = [...expandedSets].reduce((sum, pu) => sum + (elemsByParent[pu]?.length || 0), 0);
+      const newHeight = Math.min(1200, Math.max(400, setCount * 50 + totalElems * 25 + 300));
+      container.style.height = newHeight + 'px';
+    }
+    network.redraw();
+    setTimeout(() => network.fit({ animation: { duration: 300 } }), 50);
+  });
+}
+
+// ─── Property Tree Visualization ─────────────────────────────
+
+function renderPropertyTree(concept, schemas, properties, enumeratesOut) {
+  const container = document.getElementById('property-tree-container');
+  if (!container) return;
+
+  const nodes = [];
+  const edges = [];
+  let nodeId = 1;
+
+  // Concept node (root)
+  const conceptId = nodeId++;
+  nodes.push({
+    id: conceptId,
+    label: concept.name || 'Concept',
+    level: 3,
+    shape: 'box',
+    color: { background: '#1a3a5c', border: '#58a6ff', highlight: { background: '#1e4a70', border: '#79c0ff' } },
+    font: { color: '#e6edf3', size: 14, bold: true },
+    borderWidth: 2,
+    margin: 10,
+  });
+
+  // Schema node
+  const bestSchema = schemas.find(s => s.json && s.json !== 'NULL') || schemas[0];
+  const schemaId = nodeId++;
+  nodes.push({
+    id: schemaId,
+    label: bestSchema ? (bestSchema.name || 'JSON Schema') : 'JSON Schema',
+    level: 2,
+    shape: 'box',
+    color: { background: '#1a3d2a', border: '#3fb950', highlight: { background: '#1e4d30', border: '#56d364' } },
+    font: { color: '#e6edf3', size: 13 },
+    borderWidth: 2,
+    margin: 8,
+  });
+  edges.push({
+    from: schemaId,
+    to: conceptId,
+    label: 'IS_THE_JSON_SCHEMA_FOR',
+    arrows: { to: { enabled: true, type: 'arrow' } },
+    color: { color: '#30363d', highlight: '#58a6ff' },
+    font: { color: '#8b949e', size: 10, strokeWidth: 0 },
+    dashes: true,
+  });
+
+  // Build a map of enumerating concepts per property name
+  const enumMap = {};
+  for (const e of enumeratesOut) {
+    if (e.property) {
+      enumMap[e.property] = { conceptName: e.ofConcept, uuid: e.targetUuid };
+    }
+  }
+
+  // Property nodes
+  for (const p of properties) {
+    const propId = nodeId++;
+    const typeLabel = p.type ? `\n[${p.type}]` : '';
+    nodes.push({
+      id: propId,
+      label: (p.name || 'unnamed') + typeLabel,
+      level: 1,
+      shape: 'box',
+      color: { background: '#3d2e10', border: '#d29922', highlight: { background: '#4d3a15', border: '#e3b341' } },
+      font: { color: '#e6edf3', size: 12, multi: true },
+      borderWidth: 2,
+      margin: 8,
+    });
+    edges.push({
+      from: propId,
+      to: schemaId,
+      label: 'IS_A_PROPERTY_OF',
+      arrows: { to: { enabled: true, type: 'arrow' } },
+      color: { color: '#30363d', highlight: '#d29922' },
+      font: { color: '#8b949e', size: 9, strokeWidth: 0 },
+    });
+
+    // If this property is enumerated, add the enumerating concept
+    const enumInfo = enumMap[p.name];
+    if (enumInfo) {
+      const enumId = nodeId++;
+      nodes.push({
+        id: enumId,
+        label: enumInfo.conceptName || 'Enumerating Concept',
+        level: 1,
+        shape: 'ellipse',
+        color: { background: '#2a1f3d', border: '#bc8cff', highlight: { background: '#35274d', border: '#d2a8ff' } },
+        font: { color: '#e6edf3', size: 11 },
+        borderWidth: 2,
+        margin: 6,
+        _conceptUuid: enumInfo.uuid,
+      });
+      edges.push({
+        from: enumId,
+        to: propId,
+        label: 'ENUMERATES',
+        arrows: { to: { enabled: true, type: 'arrow' } },
+        color: { color: '#bc8cff', highlight: '#d2a8ff' },
+        font: { color: '#bc8cff', size: 9, strokeWidth: 0 },
+        dashes: [5, 5],
+      });
+    }
+
+    // If property also has an enumeratedBy from the props query (backup)
+    if (!enumInfo && p.enumeratedBy) {
+      const enumId = nodeId++;
+      nodes.push({
+        id: enumId,
+        label: p.enumeratedBy,
+        level: 1,
+        shape: 'ellipse',
+        color: { background: '#2a1f3d', border: '#bc8cff', highlight: { background: '#35274d', border: '#d2a8ff' } },
+        font: { color: '#e6edf3', size: 11 },
+        borderWidth: 2,
+        margin: 6,
+      });
+      edges.push({
+        from: enumId,
+        to: propId,
+        label: 'ENUMERATES',
+        arrows: { to: { enabled: true, type: 'arrow' } },
+        color: { color: '#bc8cff', highlight: '#d2a8ff' },
+        font: { color: '#bc8cff', size: 9, strokeWidth: 0 },
+        dashes: [5, 5],
+      });
+    }
+  }
+
+  const data = {
+    nodes: new vis.DataSet(nodes),
+    edges: new vis.DataSet(edges),
+  };
+
+  const options = {
+    layout: {
+      hierarchical: {
+        direction: 'UD',
+        sortMethod: 'directed',
+        levelSeparation: 100,
+        nodeSpacing: 150,
+        treeSpacing: 200,
+      },
+    },
+    physics: false,
+    interaction: {
+      hover: true,
+      tooltipDelay: 200,
+      zoomView: true,
+      dragView: true,
+    },
+    edges: {
+      smooth: {
+        type: 'cubicBezier',
+        forceDirection: 'vertical',
+        roundness: 0.4,
+      },
+    },
+  };
+
+  const network = new vis.Network(container, data, options);
+
+  // Click on enumerating concept node navigates to that concept
+  network.on('doubleClick', function (params) {
+    if (params.nodes.length === 1) {
+      const node = nodes.find(n => n.id === params.nodes[0]);
+      if (node && node._conceptUuid) {
+        showDetail(node._conceptUuid);
+      }
+    }
+  });
 }
 
 // ─── Init ────────────────────────────────────────────────────

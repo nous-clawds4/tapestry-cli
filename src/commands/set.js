@@ -6,18 +6,11 @@
  *   Superset → IS_A_SUPERSET_OF → Set → HAS_ELEMENT → ListItem
  */
 
-import { exec as execCb } from 'child_process';
-import { promisify } from 'util';
 import { randomBytes } from 'crypto';
 import { apiGet } from '../lib/api.js';
 import { signEvent } from '../lib/signer.js';
-
-const execAsync = promisify(execCb);
-const CONTAINER = 'tapestry-tapestry-1';
-
-// Canonical concept UUIDs
-const SET_CONCEPT_UUID = '39998:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:6a339361-beef-4013-a916-1723e05a4671';
-const RELATIONSHIP_CONCEPT_UUID = '39998:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:c15357e6-6665-45cc-8ea5-0320b8026f05';
+import { importEventsAndSync } from '../lib/neo4j.js';
+import { uuid } from '../lib/config.js';
 
 /**
  * Run a Cypher query and return parsed rows.
@@ -99,49 +92,10 @@ async function findItem(name) {
 }
 
 /**
- * Import events to strfry and update Neo4j.
+ * Import events to strfry and update Neo4j (targeted).
  */
 async function importEvents(events) {
-  // Clean events: only include standard nostr fields (remove _signerLabel etc.)
-  const cleanEvents = events.map(e => ({
-    id: e.id, pubkey: e.pubkey, created_at: e.created_at,
-    kind: e.kind, tags: e.tags, content: e.content, sig: e.sig,
-  }));
-  const jsonl = cleanEvents.map(e => JSON.stringify(e)).join('\n') + '\n';
-  const tmpFile = `/tmp/tapestry_set_${Date.now()}.jsonl`;
-  const { writeFileSync, unlinkSync } = await import('fs');
-  writeFileSync(tmpFile, jsonl);
-
-  try {
-    const { stdout } = await execAsync(
-      `docker exec -i ${CONTAINER} strfry import < ${tmpFile} 2>&1`,
-      { timeout: 30000 }
-    );
-    const addedMatch = stdout.match(/(\d+) added/);
-    console.log(`  ✅ ${addedMatch ? addedMatch[1] : events.length} event(s) written to strfry`);
-  } catch (err) {
-    console.error(`  ❌ strfry import failed: ${err.message}`);
-    throw err;
-  } finally {
-    try { unlinkSync(tmpFile); } catch {}
-  }
-
-  // Update Neo4j
-  console.log('  📊 Updating Neo4j...');
-  try {
-    await execAsync(
-      `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/batchTransfer.sh`,
-      { timeout: 120000 }
-    );
-    await execAsync(
-      `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/setup.sh`,
-      { timeout: 60000 }
-    );
-    console.log('  ✅ Neo4j updated — labels and relationships applied');
-  } catch (err) {
-    console.error(`  ❌ Neo4j update failed: ${err.message}`);
-    throw err;
-  }
+  await importEventsAndSync(events);
 }
 
 export function setCommand(program) {
@@ -198,7 +152,7 @@ async function createSet(name, opts) {
     console.log(`\n  🏜️  Dry run — would create:\n`);
     console.log(`     1. Set ListItem (kind 39999):`);
     console.log(`        name: "${name}"`);
-    console.log(`        z-tag: ${SET_CONCEPT_UUID}`);
+    console.log(`        z-tag: ${uuid('set')}`);
     console.log(`        d-tag: ${dTag}`);
     console.log(`\n     2. IS_A_SUPERSET_OF Relationship (kind 39999):`);
     console.log(`        nodeFrom: ${parent.supersetUuid}`);
@@ -217,7 +171,7 @@ async function createSet(name, opts) {
     tags: [
       ['d', dTag],
       ['name', name],
-      ['z', SET_CONCEPT_UUID],
+      ['z', uuid('set')],
     ],
     content: '',
   }, { personal: opts.personal });
@@ -234,7 +188,7 @@ async function createSet(name, opts) {
     tags: [
       ['d', relDTag],
       ['name', `${parent.supersetName} IS_A_SUPERSET_OF ${name}`],
-      ['z', RELATIONSHIP_CONCEPT_UUID],
+      ['z', uuid('relationship')],
       ['nodeFrom', parent.supersetUuid],
       ['nodeTo', setATag],
       ['relationshipType', 'IS_A_SUPERSET_OF'],
@@ -303,7 +257,7 @@ async function addToSet(setName, itemName, opts) {
     tags: [
       ['d', relDTag],
       ['name', `${set.name} HAS_ELEMENT ${item.name}`],
-      ['z', RELATIONSHIP_CONCEPT_UUID],
+      ['z', uuid('relationship')],
       ['nodeFrom', set.uuid],
       ['nodeTo', item.uuid],
       ['relationshipType', 'HAS_ELEMENT'],

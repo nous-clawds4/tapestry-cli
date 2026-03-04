@@ -174,6 +174,100 @@ Together, the JSON Schema and its Properties define the **horizontal structure**
 
 **Note:** The JSON Schema replaces the DList-era approach of specifying required tags directly on the ListHeader. Properties are more versatile — they support types, constraints, enumerations, and nesting.
 
+#### ENUMERATES and the `enum` Constraint
+
+When a `Superset` has an `ENUMERATES` relationship to a `Property`, the elements of that Superset define the **allowed values** for that property. This constraint propagates through two layers:
+
+```
+(superset:Superset)-[:ENUMERATES]->(property:Property)-[:IS_A_PROPERTY_OF]->(schema:JSONSchema)
+```
+
+**Layer 1 — Property event carries the enum.** The `Property` node is the direct target of the `ENUMERATES` relationship. Its `json` tag MUST include an `"enum"` array whose values are the `name` tags of the enumerating Superset's elements. This is the **primary record** of the constraint.
+
+For example, the "type" property of the "property" concept is enumerated by the "superset of all JSON data types." The Property event's `json` tag should be:
+
+```json
+{
+  "property": {
+    "name": "type",
+    "type": "string",
+    "description": "The JSON data type of the property",
+    "enum": ["string", "number", "integer", "boolean", "object", "array", "null"]
+  }
+}
+```
+
+**Layer 2 — JSON Schema aggregates from its Properties.** The concept's `JSONSchema` node assembles its `json` tag by aggregating the constraints from all connected `Property` nodes. When a Property carries an `enum`, the JSON Schema's corresponding property definition MUST include the same `enum` array, conforming to the JSON Schema `enum` keyword (per https://json-schema.org/understanding-json-schema/reference/enum):
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "property": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["string", "number", "integer", "boolean", "object", "array", "null"]
+        }
+      }
+    }
+  }
+}
+```
+
+**Direction of authority (cascade):**
+
+```
+Enumerating concept's elements (source of truth)
+    ↓ determines
+Property event's enum array (primary record)
+    ↓ propagated to
+JSON Schema event's enum array (derived artifact)
+```
+
+1. The **concept graph** (elements of the enumerating concept) is the ultimate source of truth.
+2. The **Property event** is the primary record of the constraint — it is directly connected to the enumerating Superset via `ENUMERATES`.
+3. The **JSON Schema event** is a derived artifact that aggregates from its Properties.
+
+If any layer conflicts with the one above it, the higher layer wins and the lower layer should be updated to match.
+
+**Authorship:** If the Property or JSON Schema event is not authored by the **principal Nostr user** (per Rule 11), a new event must be created by the principal user, and the old event should be superceded. Only the principal user's events are considered authoritative for schema-level constraints.
+
+**Consistency guarantee:** Tooling (e.g., `tapestry normalize`) should detect and flag inconsistencies between:
+- `ENUMERATES` relationships and `enum` arrays in Property events
+- `enum` arrays in Property events and `enum` arrays in JSON Schema events
+When elements are added to or removed from the enumerating concept, the Property and JSON Schema events should be updated accordingly.
+
+#### ENUMERATES and the `enum` Constraint
+
+When a Property has an `ENUMERATES` relationship from a Superset — meaning another concept's elements provide the valid values for that property — the JSON Schema **must** reflect this constraint using the JSON Schema `enum` keyword ([json-schema.org/understanding-json-schema/reference/enum](https://json-schema.org/understanding-json-schema/reference/enum)).
+
+The `enum` keyword restricts a value to a fixed set. In the tapestry protocol, that fixed set is derived from the **element names** of the enumerating concept:
+
+```
+(:Superset)-[:ENUMERATES]->(:Property)-[:IS_A_PROPERTY_OF]->(:JSONSchema)
+```
+
+**Example:** The "property" concept has a `type` property that is enumerated by "the superset of all JSON data types." The JSON data type concept has elements: `string`, `number`, `integer`, `boolean`, `object`, `array`, `null`. Therefore, the JSON Schema for property must include:
+
+```json
+{
+  "type": { "type": "string", "enum": ["string", "number", "integer", "boolean", "object", "array", "null"] }
+}
+```
+
+**Rules:**
+
+1. **Schema must match graph:** When an `ENUMERATES` relationship exists, the corresponding property in the JSON Schema must include an `enum` array whose values are the `name` tag values of the enumerating concept's elements (retrieved via the class thread: Superset → IS_A_SUPERSET_OF* → HAS_ELEMENT, plus implicit elements via z-tag).
+
+2. **Schema is the source of truth for validation:** The `enum` array in the JSON Schema is what tooling uses to validate element data. The `ENUMERATES` relationship in the concept graph is the *source* of the constraint; the `enum` array is its *manifestation* in the schema.
+
+3. **Keeping them in sync:** When elements are added to or removed from the enumerating concept, the JSON Schema's `enum` array must be updated to match. This is a normalization check that can be automated: compare the `enum` values in the schema against the current elements of the enumerating concept.
+
+4. **JSON Schema compliance:** All schemas must conform to the JSON Schema specification (currently [draft 2020-12](https://json-schema.org/specification)). The `enum` keyword, `type`, `required`, `properties`, and other standard keywords should be used per the spec.
+
 ### 2.3 Class Thread Examples
 
 **Minimal (flat concept):**
@@ -372,6 +466,44 @@ Explicit `slug` tags are recommended for concepts where the derived slug would b
 **Violation:** Two concept nodes in the same author's graph have the same slug (whether explicit or derived).
 **Fix:** Add an explicit `slug` tag to one concept to disambiguate.
 
+### Rule 11: Every concept MUST have exactly one active JSON Schema node
+
+Every concept node must have **at most one** `JSONSchema` node connected to it via an **explicit** `IS_THE_JSON_SCHEMA_FOR` relationship. When a concept has properties, exactly one active JSON Schema is required. Multiple active JSON Schema nodes pointing to the same concept is a normalization violation that causes duplication artifacts in the UI and ambiguity about which schema is authoritative.
+
+**Scope:** This rule applies only to **explicit** `IS_THE_JSON_SCHEMA_FOR` relationships in the Neo4j graph — not to the implicit relationships inferred from nostr event tags during sync. The underlying nostr events are not modified or deleted. Instead, normalization is enforced at the graph level by:
+1. Removing the **implicit** `IS_THE_JSON_SCHEMA_FOR` edge from the deprecated schema(s)
+2. Creating an **explicit** `SUPERCEDES` relationship from the active schema to each deprecated schema
+
+The deprecated schema nodes remain in the graph (they are still valid nostr events), but they no longer participate in the concept's active structure. The `SUPERCEDES` relationship provides an audit trail recording that the duplication was evaluated and resolved.
+
+**Violation:** Two or more `JSONSchema` nodes connected to the same concept via `IS_THE_JSON_SCHEMA_FOR`.
+
+```cypher
+// Detect concepts with multiple JSON Schema nodes
+MATCH (js:JSONSchema)-[:IS_THE_JSON_SCHEMA_FOR]->(h)
+WITH h, count(DISTINCT js) AS schemaCount, collect(DISTINCT js) AS schemas
+WHERE schemaCount > 1
+OPTIONAL MATCH (h)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'})
+RETURN h.uuid AS concept, t.value AS name, schemaCount
+```
+
+**Resolution heuristic (in priority order):**
+
+1. **Principal author match:** If exactly one schema is authored by the **principal Nostr user** for the concept graph (the pubkey configured as the graph's primary curator — e.g., the Tapestry Assistant), select that schema. The principal user is defined in the graph engine's configuration (`BRAINSTORM_RELAY_NSEC` / default signer).
+
+2. **Content over empty:** If no schema matches the principal author, prefer the schema that has a non-null `json` tag (actual schema content) over one without.
+
+3. **Create new:** If no existing schema is clearly authoritative (e.g., multiple schemas with conflicting content from non-principal authors), create a new `JSONSchema` node authored by the principal user, inheriting the best available content, and wire it to the concept. Supercede the old schemas with `SUPERCEDES` relationship events.
+
+**Resolution steps:**
+
+1. Select the active schema using the heuristic above.
+2. For each deprecated schema:
+   a. **Remove** the `IS_THE_JSON_SCHEMA_FOR` edge from the deprecated schema to the concept.
+   b. **Create** an explicit `SUPERCEDES` relationship event from the active schema to the deprecated schema (per Rule 6).
+   c. **Re-wire** any `IS_A_PROPERTY_OF` edges: if a Property node connected to the deprecated schema represents the same property as one on the active schema (same `name` tag), remove the edge to the deprecated schema. If it represents a unique property not on the active schema, re-wire it to the active schema.
+3. The deprecated schema node and its nostr event remain untouched.
+
 ---
 
 ## 4. Meta-Concepts (Canonical ListHeaders)
@@ -566,6 +698,56 @@ As of 2026-02-28 (post fix-supersets):
 - **115 Class Thread orphans** (87 inferrable, 13 already wired, remainder structural)
 - **7 duplicate concepts** (Rule 7) across 3 authors
 - **setup.sh** handles labeling and relationship creation but does NOT create missing Superset or HAS_ELEMENT nodes
+
+---
+
+## 9. Safe Workflow: Sync and Import
+
+### 9.1 The Problem
+
+The Neo4j concept graph is populated from strfry via two shell scripts inside the Docker container:
+
+1. **`batchTransfer.sh`** — Scans ALL tapestry events from strfry and MERGEs them into Neo4j (NostrEvent, NostrUser, NostrEventTag nodes + AUTHORS, HAS_TAG, REFERENCES relationships)
+2. **`setup.sh`** — Adds labels (ListHeader, ListItem, Set, Superset, etc.) and creates concept-graph relationships (IS_THE_CONCEPT_FOR, IS_A_SUPERSET_OF, HAS_ELEMENT, etc.) using MERGE
+
+Running these scripts is a **full resync**: they re-process every event and re-create every relationship. This means:
+- Implicit edges removed by `normalize fix-*` commands get **re-created**
+- SUPERCEDES audit trails survive, but the deprecated schemas get re-wired
+- It's slow and wasteful when you've only added 1-3 events
+
+### 9.2 Targeted Import (Preferred)
+
+All CLI commands that create events now use **targeted import**: they write the new events to strfry, then execute targeted Cypher queries via the API to create just the necessary Neo4j nodes, tags, labels, and relationships. This:
+- Preserves normalization state (no re-creation of removed edges)
+- Is fast (only processes the new events)
+- Is the default for: `concept add`, `concept schema`, `concept element`, `concept enumerate`, `concept link`, `concept slug`, `set create`, `set add`, `normalize fix-supersets`
+
+### 9.3 Full Resync (Use Sparingly)
+
+Full resync (`batchTransfer.sh` + `setup.sh`) should only be used when:
+- Syncing from remote relays (many new events at once)
+- The graph is in an inconsistent state that targeted import can't fix
+- You need to re-label or re-wire nodes that were modified outside the CLI
+
+The `tapestry sync` command uses full resync and will:
+1. **Prompt for confirmation** before running batchTransfer + setup (use `--force` to skip)
+2. **Auto-run `normalize check`** after import to flag any issues (use `--skip-normalize` to skip)
+
+### 9.4 Safe Workflow
+
+```
+# Normal development: targeted import (automatic, no extra steps needed)
+tapestry concept add dog "Golden Retriever"
+tapestry concept schema dog --create --content '{...}'
+
+# Syncing from remote relays: full resync + normalize
+tapestry sync                    # prompts before resync, auto-checks normalization
+tapestry normalize fix-schemas   # if check found issues
+tapestry normalize fix-supersets # if check found issues
+
+# Emergency: force full resync without prompts
+tapestry sync --force --skip-normalize
+```
 
 ---
 

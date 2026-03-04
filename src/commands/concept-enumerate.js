@@ -11,17 +11,11 @@
  * provide the valid values for a property of another concept.
  */
 
-import { exec as execCb } from 'child_process';
-import { promisify } from 'util';
 import { randomBytes } from 'crypto';
-import { writeFileSync, unlinkSync } from 'fs';
 import { apiGet } from '../lib/api.js';
 import { signEvent } from '../lib/signer.js';
-
-const execAsync = promisify(execCb);
-const CONTAINER = 'tapestry-tapestry-1';
-const RELATIONSHIP_CONCEPT_UUID = '39998:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:c15357e6-6665-45cc-8ea5-0320b8026f05';
-const PROPERTY_CONCEPT_UUID = '39998:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:6c6a1f9e-6afc-4283-9798-cd2f68c522a7';
+import { importEventsAndSync } from '../lib/neo4j.js';
+import { uuid } from '../lib/config.js';
 
 /**
  * Run a Cypher query and return parsed rows.
@@ -140,7 +134,7 @@ async function createEnumerate(enumeratingConceptName, opts) {
           ['d', dTag],
           ['name', opts.property],
           ['type', opts.propertyType],
-          ['z', PROPERTY_CONCEPT_UUID],
+          ['z', uuid('property')],
         ],
         content: '',
       }, { personal: opts.personal });
@@ -200,7 +194,7 @@ async function createEnumerate(enumeratingConceptName, opts) {
     tags: [
       ['d', randomBytes(8).toString('hex')],
       ['name', `${enumerating.supersetName} ENUMERATES ${property.name}`],
-      ['z', RELATIONSHIP_CONCEPT_UUID],
+      ['z', uuid('relationship')],
       ['nodeFrom', enumerating.supersetUuid],
       ['nodeTo', property.uuid],
       ['relationshipType', 'ENUMERATES'],
@@ -226,7 +220,7 @@ async function createEnumerate(enumeratingConceptName, opts) {
         tags: [
           ['d', randomBytes(8).toString('hex')],
           ['name', `${property.name} IS_A_PROPERTY_OF ${schema.name}`],
-          ['z', RELATIONSHIP_CONCEPT_UUID],
+          ['z', uuid('relationship')],
           ['nodeFrom', property.uuid],
           ['nodeTo', schema.uuid],
           ['relationshipType', 'IS_A_PROPERTY_OF'],
@@ -245,38 +239,8 @@ async function createEnumerate(enumeratingConceptName, opts) {
 
   // 7. Import all events
   if (events.length > 0) {
-    console.log(`\n  📡 Importing ${events.length} event(s) to strfry...`);
-    const tmpFile = `/tmp/tapestry_enum_${Date.now()}.jsonl`;
-    writeFileSync(tmpFile, events.map(e => JSON.stringify(e)).join('\n') + '\n');
-    try {
-      const { stdout } = await execAsync(
-        `docker exec -i ${CONTAINER} strfry import < ${tmpFile} 2>&1`,
-        { timeout: 30000 }
-      );
-      const addedMatch = stdout.match(/(\d+) added/);
-      console.log(`  ✅ ${addedMatch ? addedMatch[1] : events.length} event(s) written to strfry`);
-    } catch (err) {
-      console.error(`  ❌ strfry import failed: ${err.message}`);
-      process.exit(1);
-    } finally {
-      try { unlinkSync(tmpFile); } catch {}
-    }
-
-    // Update Neo4j
-    console.log('  📊 Updating Neo4j...');
-    try {
-      await execAsync(
-        `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/batchTransfer.sh`,
-        { timeout: 120000 }
-      );
-      await execAsync(
-        `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/setup.sh`,
-        { timeout: 60000 }
-      );
-      console.log('  ✅ Neo4j updated — labels and relationships applied');
-    } catch (err) {
-      console.error(`  ❌ Neo4j update failed: ${err.message}`);
-    }
+    console.log(`\n  📡 Importing ${events.length} event(s)...`);
+    await importEventsAndSync(events);
   }
 
   console.log(`\n✨ Horizontal integration complete!`);

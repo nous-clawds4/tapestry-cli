@@ -16,13 +16,12 @@
 import { exec as execCb } from 'child_process';
 import { promisify } from 'util';
 import { randomBytes } from 'crypto';
-import { writeFileSync, unlinkSync } from 'fs';
 import { apiGet } from '../lib/api.js';
 import { signEvent } from '../lib/signer.js';
+import { importEventsAndSync } from '../lib/neo4j.js';
 
 const execAsync = promisify(execCb);
-const CONTAINER = 'tapestry-tapestry-1';
-const RELATIONSHIP_CONCEPT_UUID = '39998:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:c15357e6-6665-45cc-8ea5-0320b8026f05';
+import { getConfig, uuid } from '../lib/config.js';
 
 // Relationship types that should NOT be swapped during a fork
 const DEFAULT_EXCLUDED_RELS = ['AUTHORS', 'PROVIDED_THE_TEMPLATE_FOR', 'HAS_TAG'];
@@ -90,45 +89,9 @@ async function findRelationships(uuid) {
   return rows;
 }
 
-function cleanEvent(event) {
-  return {
-    id: event.id,
-    pubkey: event.pubkey,
-    created_at: event.created_at,
-    kind: event.kind,
-    tags: event.tags,
-    content: event.content,
-    sig: event.sig,
-  };
-}
-
 async function importEvents(events) {
   if (events.length === 0) return;
-  const tmpFile = `/tmp/tapestry_fork_${Date.now()}.jsonl`;
-  writeFileSync(tmpFile, events.map(e => JSON.stringify(cleanEvent(e))).join('\n') + '\n');
-  try {
-    const { stdout } = await execAsync(
-      `docker exec -i ${CONTAINER} strfry import < ${tmpFile} 2>&1`,
-      { timeout: 30000 }
-    );
-    const m = stdout.match(/(\d+) added/);
-    console.log(`  ✅ ${m ? m[1] : events.length} event(s) written to strfry`);
-  } finally {
-    try { unlinkSync(tmpFile); } catch {}
-  }
-}
-
-async function updateNeo4j() {
-  console.log('  📊 Updating Neo4j...');
-  await execAsync(
-    `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/batchTransfer.sh`,
-    { timeout: 120000 }
-  );
-  await execAsync(
-    `docker exec ${CONTAINER} bash /usr/local/lib/node_modules/brainstorm/src/manage/concept-graph/setup.sh`,
-    { timeout: 60000 }
-  );
-  console.log('  ✅ Neo4j updated');
+  await importEventsAndSync(events);
 }
 
 /**
@@ -149,7 +112,7 @@ async function getOriginalEvent(uuid) {
   }
   const escapedFilter = filter.replace(/'/g, "'\\''");
   const { stdout } = await execAsync(
-    `docker exec ${CONTAINER} strfry scan '${escapedFilter}' 2>/dev/null`,
+    `docker exec ${getConfig('docker.container')} strfry scan '${escapedFilter}' 2>/dev/null`,
     { timeout: 15000 }
   );
   const lines = stdout.trim().split('\n').filter(Boolean);
@@ -292,7 +255,7 @@ async function forkNode(nodeName, opts) {
       tags: [
         ['d', relDTag],
         ['name', relName || `${newFrom} ${r.relType} ${newTo}`],
-        ['z', RELATIONSHIP_CONCEPT_UUID],
+        ['z', uuid('relationship')],
         ['nodeFrom', newFrom],
         ['nodeTo', newTo],
         ['relationshipType', r.relType],
@@ -312,7 +275,7 @@ async function forkNode(nodeName, opts) {
     tags: [
       ['d', provDTag],
       ['name', `${node.name} PROVIDED_THE_TEMPLATE_FOR ${nodeName} (fork)`],
-      ['z', RELATIONSHIP_CONCEPT_UUID],
+      ['z', uuid('relationship')],
       ['nodeFrom', node.uuid],
       ['nodeTo', forkedUuid],
       ['relationshipType', 'PROVIDED_THE_TEMPLATE_FOR'],
@@ -323,11 +286,8 @@ async function forkNode(nodeName, opts) {
   console.log(`  ✅ Provenance link created`);
 
   // 8. Import all events
-  console.log(`\n  📡 Importing ${allEvents.length} events to strfry...`);
+  console.log(`\n  📡 Importing ${allEvents.length} events...`);
   await importEvents(allEvents);
-
-  // 9. Update Neo4j
-  await updateNeo4j();
 
   console.log(`\n✨ Forked "${node.name}" → "${forkedUuid}"`);
   console.log(`   Original retained with PROVIDED_THE_TEMPLATE_FOR → fork`);
