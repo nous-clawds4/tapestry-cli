@@ -19,7 +19,7 @@ The `word.wordTypes` array declares which sections are present. By convention, t
 
 ## Class Threads and Concepts
 
-As per the tapestry protocol, 
+As per the tapestry protocol.
 
 ## Canonical Nodes Types
 
@@ -48,11 +48,13 @@ Other canonical node types:
 | # | Node Type | wordTypes | Description |
 |---|-----------|-----------|-------------|
 | 1 | **Node** | `node` | Any node in the graph |
-| 1 | **Word** | `word` | Any node whose data structure is a json object (as opposed to, for instance, a jpeg) |
-| 1 | **Relationship** | `relationship` | Any relationship in the graph |
-| 1 | **Graph** | `graph` | Any set of nodes and edges |
-| 1 | **Relationship Type** | `relationshipType` | Any type of graph database relationship |
-| 1 | **Node Type** | `nodeType` | Any type of graph database relationship |
+| 2 | **Word** | `word` | Any node whose data structure is a json object (as opposed to, for instance, a jpeg) |
+| 3 | **Relationship** | `word, relationship` | Any edge in the graph, directed or not, that connects two nodes |
+| 4 | **Graph** | `word, graph` | Any set of nodes and edges |
+| 5 | **Relationship Type** | `word, relationshipType` | Any type of graph database relationship |
+| 6 | **Node Type** | `nodeType` | any type of node (eg, word) |
+| 7 | **Word Type** | `word, wordType` | a type of word (e.g., coffeeHouse) |
+| 8 | **Concept Graph** | `word, graph, conceptGraph` | a graph that validates against the tapestry rules of normalization |
 
 ## Files
 
