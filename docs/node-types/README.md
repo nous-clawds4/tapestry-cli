@@ -28,7 +28,7 @@ A fully-formed concept (a "class thread") has **7 core nodes**:
 ## Files
 
 - [primary-property.md](./primary-property.md) — Primary Property node
-- class-thread-header.md — *(planned)*
+- [class-thread-header.md](./class-thread-header.md) — *(planned)*
 - superset.md — *(planned)*
 - set.md — *(planned)*
 - element.md — *(planned)*
