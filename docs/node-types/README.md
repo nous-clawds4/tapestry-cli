@@ -15,15 +15,29 @@ The `word.wordTypes` array declares which sections are present. This mirrors the
 
 A fully-formed concept (a "class thread") has **7 core nodes**:
 
-| # | Node Type | wordTypes | Description |
+| # | Node Type | wordType(s) | Description |
 |---|-----------|-----------|-------------|
 | 1 | **Class Thread Header** | `word, classThreadHeader` | The concept itself (e.g., "coffee house") |
 | 2 | **Superset** | `word, superset` | "The superset of all coffee houses" |
 | 3 | **Set** | `word, set` | A particular list/set of coffee houses |
-| 4 | **Element** | `word, element` | An individual coffee house |
-| 5 | **Schema** | `word, schema` | The JSON Schema for coffee house elements |
+| 4 | **Element** | `word, coffeeHouse` | An individual coffee house |
+| 5 | **JSON Schema** | `word, jsonSchema` | The JSON Schema for coffee house elements |
 | 6 | **Property** | `word, property` | A regular property of coffee houses |
 | 7 | **Primary Property** | `word, primaryProperty, property` | The root container property |
+| 8 | **Core Nodes Graph** | `word, graph, coreNodesGraph` |  |
+| 9 | **Class Threads Graph** | `word, graph, classThreadsGraph` |  |
+| 10 | **Property Tree Graph** | `word, graph, propertyTreeGraph` |  |
+
+There are additional canonical node types:
+
+| # | Node Type | wordTypes | Description |
+|---|-----------|-----------|-------------|
+| 1 | **Node** | `node` | Any node in the graph |
+| 1 | **Word** | `word` | Any node whose data structure is a json object (as opposed to, for instance, a jpeg) |
+| 1 | **Relationship** | `relationship` | Any relationship in the graph |
+| 1 | **Graph** | `graph` | Any relationship in the graph |
+| 1 | **Relationship Type** | `relationshipType` | Any type of graph database relationship |
+| 1 | **Node Type** | `nodeType` | Any type of graph database relationship |
 
 ## Files
 
