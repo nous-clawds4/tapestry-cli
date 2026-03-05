@@ -2,9 +2,15 @@
 
 This directory documents the canonical JSON structure for each node type in the tapestry concept graph.
 
+## Graphs
+
+A concept graph is a graph database imbued with a handful of principles that supply it with additional structure. As per standard definitions, **graphs** are a collection of **nodes** plus a collection of **relationships** that connect them.
+
+Every node in the concept graph represents some piece of information. That piece of information may be stored inside the graph database, externally, or both. In principle, there is no restriction on the size, the data format (json, jpeg, etc), or the physical manifestation (digital electronic file, piece of paper, batch of neurons) of any given node.
+
 ## The Word System
 
-Every node in the concept graph is a **word**. Each word's JSON follows a layered structure where top-level keys correspond to the node's types:
+We concern ourselves primarily with nodes that represent data files structered as JSON. Every such node is called a **word**. Every word is categorized into one or more **word types**, as presened below. Each word's JSON follows a layered structure where top-level keys correspond to the type(s) of the word:
 
 - **`word`** — universal metadata present on every node (identity, slug, description, type list)
 - **Type-specific sections** — one key per word type the node belongs to (e.g., `property`, `primaryProperty`, `classThreadHeader`)
@@ -13,22 +19,27 @@ The `word.wordTypes` array declares which sections are present. This mirrors the
 
 ## Canonical Node Types
 
-A fully-formed concept (a "class thread") has **7 core nodes**:
+Any given concept starts with the node at the start of a class thread: **Class Thread Header** node.
+
+A fully-formed concept has a total of **7 core nodes**:
 
 | # | Node Type | wordType(s) | Description |
 |---|-----------|-----------|-------------|
 | 1 | **Class Thread Header** | `word, classThreadHeader` | The concept itself (e.g., "coffee house") |
 | 2 | **Superset** | `word, superset` | "The superset of all coffee houses" |
-| 3 | **Set** | `word, set` | A particular list/set of coffee houses |
-| 4 | **Element** | `word, coffeeHouse` | An individual coffee house |
-| 5 | **JSON Schema** | `word, jsonSchema` | The JSON Schema for coffee house elements |
-| 6 | **Property** | `word, property` | A regular property of coffee houses |
-| 7 | **Primary Property** | `word, primaryProperty, property` | The root container property |
-| 8 | **Core Nodes Graph** | `word, graph, coreNodesGraph` |  |
-| 9 | **Class Threads Graph** | `word, graph, classThreadsGraph` |  |
-| 10 | **Property Tree Graph** | `word, graph, propertyTreeGraph` |  |
+| 3 | **JSON Schema** | `word, jsonSchema` | The JSON Schema for coffee house elements |
+| 4 | **Primary Property** | `word, primaryProperty, property` | The root container property |
+| 5 | **Core Nodes Graph** | `word, graph, coreNodesGraph` |  |
+| 6 | **Class Threads Graph** | `word, graph, classThreadsGraph` |  |
+| 7 | **Property Tree Graph** | `word, graph, propertyTreeGraph` |  |
 
-There are additional canonical node types:
+In addition, an extended concept has these additional nodes:
+
+| 1 | **Property** | `word, property` | A regular property of coffee houses |
+| 2 | **Set** | `word, set` | A particular list/set of coffee houses |
+| 3 | **Element** | `word, coffeeHouse` | An individual coffee house |
+
+Other canonical node types:
 
 | # | Node Type | wordTypes | Description |
 |---|-----------|-----------|-------------|
