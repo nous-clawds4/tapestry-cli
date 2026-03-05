@@ -15,7 +15,7 @@ We concern ourselves primarily with nodes that represent data files structered a
 - **`word`** — universal metadata present on every node (identity, slug, description, type list)
 - **Type-specific sections** — one key per word type the node belongs to (e.g., `property`, `primaryProperty`, `classThreadHeader`)
 
-The `word.wordTypes` array declares which sections are present. This mirrors the type hierarchy: a primary property node has `wordTypes: ["word", "primaryProperty", "property"]` because every primary property **is a** property, and every property **is a** word.
+The `word.wordTypes` array declares which sections are present. By convention, they are ordered from coarse grained to fine grained, although this convention is not strict. For example: a primary property node has `wordTypes: ["word", "property", "primaryProperty"]` because every primary property **is a** property, and every property **is a** word.
 
 ## Canonical Node Types
 
@@ -65,5 +65,6 @@ Other canonical node types:
 - **`slug`**: kebab-case, human-readable, practically unique (e.g., `primary-property-for-the-coffee-house-concept`)
 - **`key`**: camelCase, used as the programmatic identifier / JSON Schema property name (e.g., `coffeeHouse`)
 - **`name`**: lowercase human-readable (e.g., `primary property for the coffee house concept`)
-- **`title`**: PascalCase / Title Case display name (e.g., `Coffee House`)
+- **`title`**: PascalCase / Title Case display name (e.g., `Coffee House`), used for node labels as per the neo4j convention
 - **`uuid`**: the a-tag (`kind:pubkey:d-tag`) for replaceable events; derivable from the event itself
+- **`RELATIONSHIP_TYPE`**: SCREAMING_SNAKE_CASE, used for relationship types as per the neo4j convention
