@@ -17,21 +17,25 @@ We concern ourselves primarily with nodes that represent data files structered a
 
 The `word.wordTypes` array declares which sections are present. By convention, they are ordered from coarse grained to fine grained, although this convention is not strict. For example: a primary property node has `wordTypes: ["word", "property", "primaryProperty"]` because every primary property **is a** property, and every property **is a** word.
 
-## Canonical Node Types
+## Class Threads and Concepts
 
-Any given concept starts with the node at the start of a class thread: **Class Thread Header** node.
+As per the tapestry protocol, 
 
-A fully-formed concept has a total of **7 core nodes**:
+## Canonical Nodes Types
+
+### Core Nodes
+
+Any given concept starts with the node at the start of a class thread: **Class Thread Header** node. A fully-formed concept contains the Class Thread Header node plus 6 more for a total of **7 core nodes**:
 
 | # | Node Type | wordType(s) | Description |
 |---|-----------|-----------|-------------|
-| 1 | **Class Thread Header** | `word, classThreadHeader` | The concept itself (e.g., "coffee house") |
-| 2 | **Superset** | `word, superset` | "The superset of all coffee houses" |
-| 3 | **JSON Schema** | `word, jsonSchema` | The JSON Schema for coffee house elements |
-| 4 | **Primary Property** | `word, primaryProperty, property` | The root container property |
-| 5 | **Core Nodes Graph** | `word, graph, coreNodesGraph` |  |
-| 6 | **Class Threads Graph** | `word, graph, classThreadsGraph` |  |
-| 7 | **Property Tree Graph** | `word, graph, propertyTreeGraph` |  |
+| 1 | **Class Thread Header** | `word, classThreadHeader` | The concept itself |
+| 2 | **Superset** | `word, superset` | The superset of all elements of the concept |
+| 3 | **JSON Schema** | `word, jsonSchema` | The JSON Schema against which each element must validate |
+| 4 | **Primary Property** | `word, property, primaryProperty` | The root property for the JSON Schema |
+| 5 | **Core Nodes Graph** | `word, graph, coreNodesGraph` | The graph that contains all 7 core nodes and their interconnections |
+| 6 | **Class Threads Graph** | `word, graph, classThreadsGraph` | The graph that contains the Superset, all Set nodes, and all Elements of the concept |
+| 7 | **Property Tree Graph** | `word, graph, propertyTreeGraph` | The graph that containst the JSON Schema, the Primary Property, and all downstream Property nodes |
 
 In addition, an extended concept has these additional nodes:
 
@@ -46,7 +50,7 @@ Other canonical node types:
 | 1 | **Node** | `node` | Any node in the graph |
 | 1 | **Word** | `word` | Any node whose data structure is a json object (as opposed to, for instance, a jpeg) |
 | 1 | **Relationship** | `relationship` | Any relationship in the graph |
-| 1 | **Graph** | `graph` | Any relationship in the graph |
+| 1 | **Graph** | `graph` | Any set of nodes and edges |
 | 1 | **Relationship Type** | `relationshipType` | Any type of graph database relationship |
 | 1 | **Node Type** | `nodeType` | Any type of graph database relationship |
 
