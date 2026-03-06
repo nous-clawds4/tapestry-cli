@@ -32,17 +32,17 @@ Structured Elements Graph
     "relationships": [
       {
         "nodeFrom": {
-          "slug": "horse_header"
+          "slug": "concept-header-for-the-concept-of-coffee-houses"
         },
         "relationshipType": {
           "slug": "IS_THE_CONCEPT_FOR"
         },
         "nodeTo": {
-          "slug": "horse_superset"
+          "slug": "the-superset-of-all-coffee-houses"
         }
       },
     ]
   },
-  "structuredElemetsGraph": {}
+  "structuredElementsGraph": {}
 }
 ```

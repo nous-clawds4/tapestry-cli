@@ -75,14 +75,14 @@ The above file should validate against the JSON schema within the file below (wi
                 "required": [
                     "oNames",
                     "oSlugs",
-                    "oKeyes",
+                    "oKeys",
                     "oTitles",
                     "oLabels"
                 ],
                 "unique": [
                     "oNames",
                     "oSlugs",
-                    "oKeyes",
+                    "oKeys",
                     "oTitles",
                     "oLabels"
                 ],
@@ -143,7 +143,7 @@ The above file should validate against the JSON schema within the file below (wi
                             }
                         }
                     },
-                    "oKeyes": {
+                    "oKeys": {
                         "type": "object",
                         "name": "key",
                         "title": "Key",
@@ -199,7 +199,7 @@ The above file should validate against the JSON schema within the file below (wi
                             }
                         }
                     },
-                    "olabels": {
+                    "oLabels": {
                         "type": "object",
                         "name": "label",
                         "title": "Label",

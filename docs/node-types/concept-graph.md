@@ -63,8 +63,8 @@ Concept Graph
     ]
   },
   "conceptGraph": {
-    "description": "The collection of all nodes and edges traversed by the class threads of the concept of coffee houses"
-    "cypher": "MATCH (n:ConceptHeader {uuid: "<uuid_for_coffee_houses>"}) ... class thread query"
+    "description": "The collection of all nodes and edges traversed by the class threads of the concept of coffee houses",
+    "cypher": "MATCH (n:ConceptHeader {uuid: '<uuid_for_coffee_houses>'}) ... class thread query"
   }
 }
 ```

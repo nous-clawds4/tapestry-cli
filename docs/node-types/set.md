@@ -36,8 +36,8 @@ The above file should validate against the JSON schema within the file below (wi
         ],
     },
     "jsonSchema": {
-        "name": "concept header",
-        "title": "Concept Header",
+        "name": "set",
+        "title": "Set",
         "$schema": "http://json-schema.org/schema",
         "definitions": {},
         "type": "object",
