@@ -70,7 +70,7 @@ The above file should validate against the JSON schema within the file below (wi
                 "type": "object",
                 "name": "class thread header",
                 "title": "Class Thread Header",
-                "name": "class-thread-header",
+                "slug": "class-thread-header",
                 "description": "data about this class thread header",
                 "required": [
                     "oNames",
@@ -234,8 +234,7 @@ The above file should validate against the JSON schema within the file below (wi
                         "description": "The top-level description for this concept",
                         "slug": "description"
                     }
-                },
-                "slug": "classThreadHeader"
+                }
             }
         }
     }
