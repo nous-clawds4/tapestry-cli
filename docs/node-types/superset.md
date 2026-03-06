@@ -10,7 +10,7 @@ Superset
     "name": "the superset of all coffee houses",
     "title": "The Superset of All Coffee Houses",
     "wordTypes": ["word", "superset"],
-    "coreMemberOf": [ "class-thread-header-for-the-concept-of-coffee-houses" ],
+    "coreMemberOf": [ "class-thread-header-for-the-concept-of-coffee-houses" ]
   },
   "superset": {
     "name": "coffee houses",
