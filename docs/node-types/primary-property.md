@@ -13,8 +13,6 @@ The **primary property** is the root container property for a concept. When you 
     "wordTypes": ["word", "property", "primaryProperty"],
     "coreMemberOf": [ {"slug": "class-thread-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
   },
-  "primaryProperty": {
-  },
   "property": {
     "key": "coffeeHouse",
     "title": "Coffee House",
@@ -31,6 +29,8 @@ The **primary property** is the root container property for a concept. When you 
         "required": ["name", "slug", "description"]
       }
     }
+  },
+  "primaryProperty": {
   }
 }
 ```
