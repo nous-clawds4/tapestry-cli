@@ -31,18 +31,18 @@ Any given concept starts with the node at the start of a class thread: **Class T
 | 2 | [**Superset**](,/superset.md) | `word, superset` | The superset of all elements of the concept |
 | 3 | [**JSON Schema**](./jsonSchema.md) | `word, jsonSchema` | The JSON Schema against which each element must validate |
 | 4 | [**Primary Property**](./primaryProperty.md) | `word, property, primaryProperty` | The root property for the JSON Schema |
-| 5 | [**Superset Descendants Graph**](./superset.md) | `word, graph, supersetDescendantsGraph` | The graph that contains the Superset, all Set nodes, and all Elements of the concept |
+| 5 | [**Superset Threads Graph**](./supersetThreadsGraph.md) | `word, graph, supersetDescendantsGraph` | The graph that contains the Superset, all Set nodes, and all Elements of the concept |
 | 6 | [**Property Tree Graph**](./propertyTreeGraph.md) | `word, graph, propertyTreeGraph` | The graph that containst the JSON Schema, the Primary Property, and all downstream Property nodes |
-| 7 | [**Concept Graph**](./conceptGraphs.md) | `word, graph, conceptGraph` | A graph that contains all 7 core nodes and their interconnections, and which also imports the clas |
+| 7 | [**Concept Graph**](./conceptGraph.md) | `word, graph, conceptGraph` | A graph that contains all 7 core nodes and their interconnections, and which also imports the superset threads and property tree graphs |
 | 8 | [**Properties**](./properties.md) | `word, set, properties` | The set of property nodes for this concept |
 
 In addition, an extended concept has these additional nodes:
 
 | # | Node Type | wordType(s) | Description |
 |---|-----------|-----------|-------------|
-| 1 | **Property** | `word, property` | A regular property of coffee houses |
-| 2 | **Set** | `word, set` | A particular list/set of coffee houses |
-| 3 | **Element** | `word, coffeeHouse` | An individual coffee house |
+| 1 | [**Property**](./property.md) | `word, property` | A regular property of coffee houses |
+| 2 | [**Set**](./set.md) | `word, set` | A particular list/set of coffee houses |
+| 3 | [**Element**](./element.md) | `word, coffeeHouse` | An individual coffee house |
 
 Technically speaking, the formal definition of a concept is in terms of a graph: it is *the collection of all core + extended nodes and edges* that make up the graph. Informally, the word "concept" may sometimes be used to refer to the **Class Thread Header** node, and may sometimes be used to refer to the set of nodes and edges that make up the entire Concept Graph.
 
@@ -51,23 +51,13 @@ Other canonical node types:
 | # | Node Type | wordTypes | Description |
 |---|-----------|-----------|-------------|
 | 1 | **Node** | `node` | Any node in the graph |
-| 2 | **Word** | `word` | Any node whose data structure is a json object (as opposed to, for instance, a jpeg) |
-| 3 | **Relationship** | `word, relationship` | Any edge in the graph, directed or not, that connects two nodes |
-| 4 | **Graph** | `word, graph` | Any set of nodes and edges |
-| 5 | **Relationship Type** | `word, relationshipType` | Any type of graph database relationship |
+| 2 | [**Word**](./word.md) | `word` | Any node whose data structure is a json object (as opposed to, for instance, a jpeg) |
+| 3 | [**Relationship**](./relationship.md) | `word, relationship` | Any edge in the graph, directed or not, that connects two nodes |
+| 4 | [**Graph**](./graph.md) | `word, graph` | Any set of nodes and edges |
+| 5 | [**Relationship Type**](./relationshipType.md) | `word, relationshipType` | Any type of graph database relationship |
 | 6 | **Node Type** | `nodeType` | any type of node (eg, word) |
-| 7 | **Word Type** | `word, wordType` | a type of word (e.g., coffeeHouse) |
-| 8 | **Concept Graph** | `word, graph, conceptGraph` | a graph that validates against the tapestry rules of normalization |
-
-## Files
-
-- [primary-property.md](./primary-property.md) — Primary Property node
-- [class-thread-header.md](./class-thread-header.md) — *(planned)*
-- superset.md — *(planned)*
-- set.md — *(planned)*
-- element.md — *(planned)*
-- schema.md — *(planned)*
-- property.md — *(planned)*
+| 7 | [**Word Type**](./wordType.md) | `word, wordType` | a type of word (e.g., coffeeHouse) |
+| 8 | [**Tapestry**](./tapestry.md) | `word, graph, tapestry` | a graph that validates against the tapestry rules of normalization; the union of many individual concept graphs |
 
 ## Conventions
 
