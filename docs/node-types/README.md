@@ -23,7 +23,9 @@ Class threads and concepts are defined as per the tapestry protocol. Canonical w
 
 ### Core Nodes
 
-Any given concept starts with the node at the start of a class thread: **Class Thread Header** node. A fully-formed concept contains the Class Thread Header node plus 7 more for a total of **8 core nodes**:
+Any given concept can be idenfied by the node at the start of a class thread: **Concept Header** node.
+
+A fully-formed concept contains the **Concept Header** node plus 7 more for a total of **8 core nodes**:
 
 | # | Word Type | wordType(s) | Description |
 |---|-----------|-----------|-------------|
@@ -36,7 +38,7 @@ Any given concept starts with the node at the start of a class thread: **Class T
 | 7 | [**Core Nodes Graph**](./core-nodes-graph.md) | `word, graph, coreNodesGraph` | A graph that contains all core nodes and their interconnections. |
 | 8 | [**Concept Graph**](./concept-graph.md) | `word, graph, conceptGraph` | The graph that contains the concept header, the Superset, all Set nodes, and all Elements of the concept. It also imports the core nodes graph and property tree graph |
 
-In addition, an extended concept has these additional nodes:
+In addition, a concept has these additional nodes:
 
 | # | Word Type | wordType(s) | Description |
 |---|-----------|-----------|-------------|
@@ -44,7 +46,12 @@ In addition, an extended concept has these additional nodes:
 | 2 | [**Set**](./set.md) | `word, set` | A particular list/set of coffee houses |
 | 3 | [**Element**](./element.md) | `word, coffeeHouse` | An individual coffee house |
 
-Technically speaking, the formal definition of a concept is in terms of a graph: it is *the collection of all core + extended nodes and edges* that make up the graph. Informally, the word "concept" may sometimes be used to refer to the **Concept Header** node, may sometimes be used to refer to the set of nodes and edges that make up the entire **Concept Graph** (class thread concept), or may be used to describe the union of the **Concept Graph**, **Core Nodes Graph** and the **Property Tree Graph** (extended concept).
+Technically speaking, the formal definition of a concept cannot be stated without reference to the class thread rule: it is a *graph*, a *collection of all the nodes and edges traversed by every class thread that emanates from a single node*. That single node is referred to as the *concept header* node (also know as the *class thread header node*. And the collection of nodes + edges is referred to as the *concept graph*.
+
+The word *concept* by itself can have 3 different meanings, depending on the context:
+1. the **Concept Header** node
+2. the **Concept Graph**
+3. the union of the **Concept Graph**, the **Core Nodes Graph**, and the **Property Tree Graph**
 
 Other canonical word types:
 
