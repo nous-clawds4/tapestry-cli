@@ -16,7 +16,7 @@ Class Thread Header
       "singular": "coffee house",
       "plural": "coffee houses"
     },
-    "OSlugs": {
+    "oSlugs": {
       "singular": "coffee-house",
       "plural": "coffee-houses"
     },
