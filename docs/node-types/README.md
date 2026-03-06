@@ -21,7 +21,7 @@ The `word.wordTypes` array declares which sections are present. By convention, t
 
 Class threads and concepts are defined as per the tapestry protocol. Canonical word types are the ones that are required for the basic functioning of the concept graph.
 
-### Core Nodes
+### Core Concept Word Types
 
 Any given concept can be identified by the node at the start of a class thread: **Concept Header** node.
 
@@ -38,6 +38,8 @@ A fully-formed concept contains the **Concept Header** node plus 7 more for a to
 | 7 | [**Core Nodes Graph**](./core-nodes-graph.md) | `word, graph, coreNodesGraph` | A graph that contains all core nodes and their interconnections. |
 | 8 | [**Concept Graph**](./concept-graph.md) | `word, graph, conceptGraph` | The graph that contains the concept header, the Superset, all Set nodes, and all Elements of the concept. It also imports the core nodes graph and property tree graph |
 
+### Extended Concept Word Types
+
 In addition, any given concept is associated with these additional word types:
 
 | # | Word Type | wordType(s) | Description |
@@ -53,6 +55,8 @@ The word *concept* by itself can have 3 different meanings, depending on the con
 2. the **Concept Graph**
 3. the union of the **Concept Graph**, the **Core Nodes Graph**, and the **Property Tree Graph**
 
+### Other Canonical Word Types
+
 Other canonical word types:
 
 | # | Word Type | wordTypes | Description |
@@ -61,7 +65,7 @@ Other canonical word types:
 | 3 | [**Relationship**](./relationship.md) | `word, relationship` | Any edge in the graph, directed or not, that connects two nodes |
 | 4 | [**Graph**](./graph.md) | `word, graph` | Any set of nodes and edges |
 | 5 | [**Relationship Type**](./relationship-type.md) | `word, relationshipType` | Any type of graph database relationship |
-| 6 | [**Node Type**](./node-type.md) | `nodeType` | any type of node (eg, word) |
+| 6 | [**Node Type**](./node-type.md) | `nodeType` | any type of node (eg, word, image) |
 | 7 | [**Word Type**](./word-type.md) | `word, wordType` | a type of word (e.g., coffeeHouse) |
 | 8 | [**Tapestry**](./tapestry.md) | `word, graph, tapestry` | a graph that validates against the tapestry rules of normalization; the union of many individual concept graphs |
 
