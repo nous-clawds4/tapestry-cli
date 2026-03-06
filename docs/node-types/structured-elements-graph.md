@@ -7,7 +7,8 @@ Structured Elements Graph
     "slug": "structured-elements-graph-for-the-concept-of-coffee-houses",
     "name": "structured elements graph for the concept of coffee houses",
     "title": "Structured Elements Graph for the Concept of Coffee Houses",
-    "wordTypes": ["word", "graph", "structuredElementsGraph"]
+    "wordTypes": ["word", "graph", "structuredElementsGraph"],
+    "coreMemberOf": [ {"slug": "class-thread-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
   },
   "graph": {
     "nodes": [
