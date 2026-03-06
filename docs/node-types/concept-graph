@@ -1,0 +1,61 @@
+Concept Graph
+=====
+
+```json
+{
+  "word": {
+    "slug": "concept-graph-for-the-concept-of-coffee-houses",
+    "name": "concept graph for the concept of coffee houses",
+    "title": "Concept Graph for the Concept of Coffee Houses",
+    "wordTypes": ["word", "graph", "conceptGraph"],
+    "coreMemberOf": [ {"slug": "class-thread-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
+  },
+  "graph": {
+    "nodes": [
+      {
+        "slug": "",
+        "uuid": "<uuid>"
+      }
+    ],
+    "relationshipTypes": [
+      {
+        "slug": "IS_A_SUPERSET_OF",
+        "name": "class thread propagation",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "HAS_ELEMENT",
+        "name": "class thread termination",
+        "uuid": "<uuid>"
+      }
+    ],
+    "relationships": [
+      {
+        "nodeFrom": {
+          "slug": "horse_header"
+        },
+        "relationshipType": {
+          "slug": "IS_THE_CONCEPT_FOR"
+        },
+        "nodeTo": {
+          "slug": "horse_superset"
+        }
+      },
+    ],
+    "imports": [
+      {
+        "slug": "properties-tree-graph-for-the-concept-of-coffee-houses",
+        "name": "properties tree graph for the concept of coffee houses",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "structured-elements-graph-for-the-concept-of-coffee-houses",
+        "name": "structured elements graph for the concept of coffee houses",
+        "uuid": "<uuid>"
+      }
+    ]
+  },
+  "conceptGraph": {
+  }
+}
+```
