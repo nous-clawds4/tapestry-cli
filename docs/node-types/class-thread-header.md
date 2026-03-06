@@ -21,9 +21,17 @@ Class Thread Header
       "singular": "coffee-house",
       "plural": "coffee-houses"
     },
+    "oKeys": {
+      "singular": "coffeeHouse",
+      "plural": "coffeeHouses"
+    },
     "oTitles": {
       "singular": "Coffee House",
       "plural": "Coffee Houses"
+    },
+    "oLabels": {
+      "singular": "CoffeeHouse",
+      "plural": "CoffeeHouses"
     }
   }
 }
