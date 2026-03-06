@@ -58,11 +58,3 @@ Structured Elements Graph
   }
 }
 ```
-
-{\"graph\":{
-
-\"nodes\":[{\"slug\":\"pig_superset\",\"uuid\":\"39999:401243c0cb5be1fce6e071d26036efe1975803ec63f54beadcbb37ae6015677f:pig-superset\",\"name\":\"the superset of all pigs\"}],
-
-\"relationshipTypes\":[{\"slug\":\"IS_A_SUPERSET_OF\",\"name\":\"class thread propagation\"},{\"slug\":\"HAS_ELEMENT\",\"name\":\"class thread termination\"}],
-
-\"relationships\":[]}}
