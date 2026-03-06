@@ -70,11 +70,8 @@ The above file should validate against the JSON schema within the file below (wi
                 "type": "object",
                 "name": "class thread header",
                 "title": "Class Thread Header",
+                "name": "class-thread-header",
                 "description": "data about this class thread header",
-                "types": [
-                    "primaryProperty"
-                ],
-                "require": true,
                 "required": [
                     "oName",
                     "oTitle",
@@ -86,13 +83,6 @@ The above file should validate against the JSON schema within the file below (wi
                     "oSlug"
                 ],
                 "properties": {
-                    "oSlug": {
-                        "type": "string",
-                        "name": "slug",
-                        "title": "Slug",
-                        "description": "The top-level slug for this concept",
-                        "slug": "slug"
-                    },
                     "oName": {
                         "type": "object",
                         "name": "name",
@@ -122,11 +112,60 @@ The above file should validate against the JSON schema within the file below (wi
                         "slug": "name"
                     },
                     "oTitle": {
-                        "type": "string",
-                        "name": "title",
-                        "title": "Title",
-                        "description": "The top-level title for this concept",
-                        "slug": "title"
+                        "type": "object",
+                        "name": "name",
+                        "title": "Name",
+                        "description": "The top-level name for this concept",
+                        "required": [
+                            "singular",
+                            "plural"
+                        ],
+                        "unique": [],
+                        "properties": {
+                            "singular": {
+                                "type": "string",
+                                "name": "singular",
+                                "title": "Singular",
+                                "description": "",
+                                "slug": "singular"
+                            },
+                            "plural": {
+                                "type": "string",
+                                "name": "plural",
+                                "title": "Plural",
+                                "description": "",
+                                "slug": "plural"
+                            }
+                        },
+                        "slug": "name"
+                    },
+                    "oSlug": {
+                        "type": "object",
+                        "name": "name",
+                        "title": "Name",
+                        "description": "The top-level name for this concept",
+                        "required": [
+                            "singular",
+                            "plural"
+                        ],
+                        "unique": [],
+                        "properties": {
+                            "singular": {
+                                "type": "string",
+                                "name": "singular",
+                                "title": "Singular",
+                                "description": "",
+                                "slug": "singular"
+                            },
+                            "plural": {
+                                "type": "string",
+                                "name": "plural",
+                                "title": "Plural",
+                                "description": "",
+                                "slug": "plural"
+                            }
+                        },
+                        "slug": "name"
                     },
                     "description": {
                         "type": "string",
