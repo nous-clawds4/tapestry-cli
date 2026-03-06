@@ -39,16 +39,16 @@ Concept Header
 
 ## JSON Schema node
 
-This is the JSON Schema node for the Class Thread Header concept.
+This is the JSON Schema node for the Concept Header concept.
 
 The above file should validate against the JSON schema within the file below (within `jsonSchema`).
 
 ```json
 {
     "word": {
-        "slug": "json-schema-for-class-thread-header",
-        "title": "JSON Schema for Class Thread Header",
-        "name": "JSON Schema for class thread header",
+        "slug": "json-schema-for-concept-header",
+        "title": "JSON Schema for Concept Header",
+        "name": "JSON Schema for concept header",
         "description": "",
         "wordTypes": [
             "word",
