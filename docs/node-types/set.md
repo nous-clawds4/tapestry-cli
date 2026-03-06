@@ -6,12 +6,12 @@ Set
 ```json
 {
   "word": {
-    "slug": "set-for-the-concept-of-coffee-houses",
-    "name": "set for the concept of coffee houses",
-    "title": "Set for the Concept of Coffee Houses",
+    "slug": "a-set-of-coffee-houses",
+    "name": "a set of coffee houses",
+    "title": "A Set of Coffee Houses",
     "wordTypes": ["word", "set"]
   },
-  "superset": {
+  "set": {
   }
 }
 ```
