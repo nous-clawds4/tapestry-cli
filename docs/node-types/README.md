@@ -29,11 +29,11 @@ Any given concept starts with the node at the start of a class thread: **Class T
 |---|-----------|-----------|-------------|
 | 1 | [**Class Thread Header**](./class-thread-header.md) | `word, classThreadHeader` | The concept itself |
 | 2 | [**Superset**](,/superset.md) | `word, superset` | The superset of all elements of the concept |
-| 3 | [**JSON Schema**](./jsonSchema.md) | `word, jsonSchema` | The JSON Schema against which each element must validate |
-| 4 | [**Primary Property**](./primaryProperty.md) | `word, property, primaryProperty` | The root property for the JSON Schema |
-| 5 | [**Superset Threads Graph**](./supersetThreadsGraph.md) | `word, graph, supersetDescendantsGraph` | The graph that contains the Superset, all Set nodes, and all Elements of the concept |
-| 6 | [**Property Tree Graph**](./propertyTreeGraph.md) | `word, graph, propertyTreeGraph` | The graph that containst the JSON Schema, the Primary Property, and all downstream Property nodes |
-| 7 | [**Concept Graph**](./conceptGraph.md) | `word, graph, conceptGraph` | A graph that contains all 7 core nodes and their interconnections, and which also imports the superset threads and property tree graphs |
+| 3 | [**JSON Schema**](./json-schema.md) | `word, jsonSchema` | The JSON Schema against which each element must validate |
+| 4 | [**Primary Property**](./primary-property.md) | `word, property, primaryProperty` | The root property for the JSON Schema |
+| 5 | [**Superset Threads Graph**](./superset-threads-graph.md) | `word, graph, supersetDescendantsGraph` | The graph that contains the Superset, all Set nodes, and all Elements of the concept |
+| 6 | [**Property Tree Graph**](./property-tree-graph.md) | `word, graph, propertyTreeGraph` | The graph that containst the JSON Schema, the Primary Property, and all downstream Property nodes |
+| 7 | [**Concept Graph**](./concept-graph.md) | `word, graph, conceptGraph` | A graph that contains all 7 core nodes and their interconnections, and which also imports the superset threads and property tree graphs |
 | 8 | [**Properties**](./properties.md) | `word, set, properties` | The set of property nodes for this concept |
 
 In addition, an extended concept has these additional nodes:
@@ -53,9 +53,9 @@ Other canonical word types:
 | 2 | [**Word**](./word.md) | `word` | Any node whose data structure is a json object (as opposed to, for instance, a jpeg) |
 | 3 | [**Relationship**](./relationship.md) | `word, relationship` | Any edge in the graph, directed or not, that connects two nodes |
 | 4 | [**Graph**](./graph.md) | `word, graph` | Any set of nodes and edges |
-| 5 | [**Relationship Type**](./relationshipType.md) | `word, relationshipType` | Any type of graph database relationship |
-| 6 | [**Node Type**](./nodeType.md) | `nodeType` | any type of node (eg, word) |
-| 7 | [**Word Type**](./wordType.md) | `word, wordType` | a type of word (e.g., coffeeHouse) |
+| 5 | [**Relationship Type**](./relationship-type.md) | `word, relationshipType` | Any type of graph database relationship |
+| 6 | [**Node Type**](./node-type.md) | `nodeType` | any type of node (eg, word) |
+| 7 | [**Word Type**](./word-type.md) | `word, wordType` | a type of word (e.g., coffeeHouse) |
 | 8 | [**Tapestry**](./tapestry.md) | `word, graph, tapestry` | a graph that validates against the tapestry rules of normalization; the union of many individual concept graphs |
 
 ## Conventions
