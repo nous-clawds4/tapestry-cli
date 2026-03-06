@@ -12,6 +12,7 @@ Set
     "wordTypes": ["word", "set"]
   },
   "set": {
+    "name": "London coffee houses"
   }
 }
 ```
