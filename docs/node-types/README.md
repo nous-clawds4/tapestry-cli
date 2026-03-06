@@ -23,7 +23,7 @@ Class threads and concepts are defined as per the tapestry protocol. Canonical w
 
 ### Core Nodes
 
-Any given concept starts with the node at the start of a class thread: **Class Thread Header** node. A fully-formed concept contains the Class Thread Header node plus 6 more for a total of **7 core nodes**:
+Any given concept starts with the node at the start of a class thread: **Class Thread Header** node. A fully-formed concept contains the Class Thread Header node plus 7 more for a total of **8 core nodes**:
 
 | # | Node Type | wordType(s) | Description |
 |---|-----------|-----------|-------------|
@@ -34,6 +34,7 @@ Any given concept starts with the node at the start of a class thread: **Class T
 | 5 | **Superset Descendants Graph** | `word, graph, supersetDescendantsGraph` | The graph that contains the Superset, all Set nodes, and all Elements of the concept |
 | 6 | **Property Tree Graph** | `word, graph, propertyTreeGraph` | The graph that containst the JSON Schema, the Primary Property, and all downstream Property nodes |
 | 7 | **Concept Graph** | `word, graph, conceptGraph` | A graph that contains all 7 core nodes and their interconnections, and which also imports the clas |
+| 8 | **Properties** | `word, set, properties` | The set of property nodes for this concept |
 
 In addition, an extended concept has these additional nodes:
 
