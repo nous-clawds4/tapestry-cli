@@ -23,7 +23,7 @@ Class threads and concepts are defined as per the tapestry protocol. Canonical w
 
 ### Core Nodes
 
-Any given concept can be idenfied by the node at the start of a class thread: **Concept Header** node.
+Any given concept can be identified by the node at the start of a class thread: **Concept Header** node.
 
 A fully-formed concept contains the **Concept Header** node plus 7 more for a total of **8 core nodes**:
 
@@ -38,7 +38,7 @@ A fully-formed concept contains the **Concept Header** node plus 7 more for a to
 | 7 | [**Core Nodes Graph**](./core-nodes-graph.md) | `word, graph, coreNodesGraph` | A graph that contains all core nodes and their interconnections. |
 | 8 | [**Concept Graph**](./concept-graph.md) | `word, graph, conceptGraph` | The graph that contains the concept header, the Superset, all Set nodes, and all Elements of the concept. It also imports the core nodes graph and property tree graph |
 
-In addition, a concept has these additional nodes:
+In addition, any given concept is associated with these additional word types:
 
 | # | Word Type | wordType(s) | Description |
 |---|-----------|-----------|-------------|
