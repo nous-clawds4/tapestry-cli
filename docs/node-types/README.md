@@ -29,8 +29,8 @@ Any given concept starts with the node at the start of a class thread: **Class T
 
 | # | Node Type | wordType(s) | Description |
 |---|-----------|-----------|-------------|
-| 1 | **Class Thread Header** | `word, classThreadHeader` | The concept itself |
-| 2 | **Superset** | `word, superset` | The superset of all elements of the concept |
+| 1 | [**Class Thread Header**](./class-thread-header.md) | `word, classThreadHeader` | The concept itself |
+| 2 | [**Superset**](,/superset.md) | `word, superset` | The superset of all elements of the concept |
 | 3 | **JSON Schema** | `word, jsonSchema` | The JSON Schema against which each element must validate |
 | 4 | **Primary Property** | `word, property, primaryProperty` | The root property for the JSON Schema |
 | 5 | **Core Nodes Graph** | `word, graph, coreNodesGraph` | The graph that contains all 7 core nodes and their interconnections |
