@@ -1,6 +1,8 @@
 Property Tree Graph
 =====
 
+## Sample JSON (coffee house concept)
+
 ```json
 {
   "word": {
