@@ -8,6 +8,7 @@ Class Thread Header
   "word": {
     "slug": "class-thread-header-for-the-concept-of-coffee-houses",
     "name": "class thread header for the concept of coffee houses",
+    "title": "Class Thread Header for the Concept of Coffee Houses",
     "wordTypes": ["word", "classThreadHeader"]
   },
   "classThreadHeader": {
