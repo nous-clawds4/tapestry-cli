@@ -28,7 +28,7 @@ Any given concept starts with the node at the start of a class thread: **Class T
 | # | Word Type | wordType(s) | Description |
 |---|-----------|-----------|-------------|
 | 1 | [**Concept Header**](./concept-header.md) | `word, conceptHeader` | The node from which all concept threads (aka class threads) emanate for this concept |
-| 2 | [**Superset**](,/superset.md) | `word, superset` | The superset of all elements of the concept |
+| 2 | [**Superset**](./superset.md) | `word, superset` | The superset of all elements of the concept |
 | 3 | [**JSON Schema**](./json-schema.md) | `word, jsonSchema` | The JSON Schema against which each element must validate |
 | 4 | [**Primary Property**](./primary-property.md) | `word, property, primaryProperty` | The root property for the JSON Schema |
 | 5 | [**Properties**](./properties.md) | `word, set, properties` | The set of property nodes for this concept |
