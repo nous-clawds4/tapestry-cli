@@ -17,11 +17,9 @@ We concern ourselves primarily with nodes that represent data files structered a
 
 The `word.wordTypes` array declares which sections are present. By convention, they are ordered from coarse grained to fine grained, although this convention is not strict. For example: a primary property node has `wordTypes: ["word", "property", "primaryProperty"]` because every primary property **is a** property, and every property **is a** word.
 
-## Class Threads and Concepts
+## Canonical Word Types
 
-As per the tapestry protocol.
-
-## Canonical Nodes Types
+Class threads and concepts are defined as per the tapestry protocol. Canonical word types are the ones that are required for the basic functioning of the concept graph.
 
 ### Core Nodes
 
@@ -33,15 +31,18 @@ Any given concept starts with the node at the start of a class thread: **Class T
 | 2 | [**Superset**](,/superset.md) | `word, superset` | The superset of all elements of the concept |
 | 3 | **JSON Schema** | `word, jsonSchema` | The JSON Schema against which each element must validate |
 | 4 | **Primary Property** | `word, property, primaryProperty` | The root property for the JSON Schema |
-| 5 | **Core Nodes Graph** | `word, graph, coreNodesGraph` | The graph that contains all 7 core nodes and their interconnections |
-| 6 | **Class Threads Graph** | `word, graph, classThreadsGraph` | The graph that contains the Superset, all Set nodes, and all Elements of the concept |
-| 7 | **Property Tree Graph** | `word, graph, propertyTreeGraph` | The graph that containst the JSON Schema, the Primary Property, and all downstream Property nodes |
+| 5 | **Superset Descendants Graph** | `word, graph, supersetDescendantsGraph` | The graph that contains the Superset, all Set nodes, and all Elements of the concept |
+| 6 | **Property Tree Graph** | `word, graph, propertyTreeGraph` | The graph that containst the JSON Schema, the Primary Property, and all downstream Property nodes |
+| 7 | **Concept Graph** | `word, graph, conceptGraph` | A graph that contains all 7 core nodes and their interconnections, and which also imports the clas |
 
 In addition, an extended concept has these additional nodes:
 
+| # | Node Type | wordType(s) | Description |
 | 1 | **Property** | `word, property` | A regular property of coffee houses |
 | 2 | **Set** | `word, set` | A particular list/set of coffee houses |
 | 3 | **Element** | `word, coffeeHouse` | An individual coffee house |
+
+Technically speaking, the formal definition of a concept is in terms of a graph: it is *the collection of all core + extended nodes and edges* that make up the graph. Informally, the word "concept" may sometimes be used to refer to the **Class Thread Header** node, and may sometimes be used to refer to the set of nodes and edges that make up the entire Concept Graph.
 
 Other canonical node types:
 
