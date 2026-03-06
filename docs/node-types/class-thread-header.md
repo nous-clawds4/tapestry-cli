@@ -7,11 +7,11 @@ Concept Header
 {
   "word": {
     "slug": "concept-header-for-the-concept-of-coffee-houses",
-    "name": "class thread header for the concept of coffee houses",
-    "title": "Class Thread Header for the Concept of Coffee Houses",
-    "wordTypes": ["word", "classThreadHeader"]
+    "name": "concept header for the concept of coffee houses",
+    "title": "Concept Header for the Concept of Coffee Houses",
+    "wordTypes": ["word", "conceptHeader"]
   },
-  "classThreadHeader": {
+  "conceptHeader": {
     "description": "A coffee house is a place to get coffee!",
     "oNames": {
       "singular": "coffee house",
@@ -50,28 +50,28 @@ The above file should validate against the JSON schema within the file below (wi
         "title": "JSON Schema for Class Thread Header",
         "name": "JSON Schema for class thread header",
         "description": "",
-        "principalWordType": "jsonSchema",
         "wordTypes": [
             "word",
             "jsonSchema"
         ],
     },
     "jsonSchema": {
-        "name": "class thread header",
-        "title": "Class Thread Header",
+        "name": "concept header",
+        "title": "Concept Header",
         "$schema": "http://json-schema.org/schema",
         "definitions": {},
         "type": "object",
         "required": [
-            "classThreadHeader"
+            "conceptHeader"
         ],
         "properties": {
-            "classThreadHeader": {
+            "conceptHeader": {
                 "type": "object",
-                "name": "class thread header",
-                "title": "Class Thread Header",
-                "slug": "class-thread-header",
-                "description": "data about this class thread header",
+                "name": "concept header",
+                "title": "Concept Header",
+                "slug": "concept-header",
+                "alias": "class thread header",
+                "description": "data about this concept header",
                 "required": [
                     "oNames",
                     "oSlugs",
