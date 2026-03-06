@@ -12,6 +12,7 @@ JSON Schema
     "wordTypes": ["word", "jsonSchema"]
   },
   "jsonSchema": {
+    
   }
 }
 ```
