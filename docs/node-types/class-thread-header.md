@@ -23,13 +23,16 @@ Class Thread Header
     "oTitles": {
       "singular": "Coffee House",
       "plural": "Coffee Houses"
-    },
-    "label": "CoffeeHouse"
+    }
   }
 }
 ```
 
 ## JSON Schema node
+
+This is the JSON Schema node for the Class Thread Header concept.
+
+The above file should validate against the JSON schema within the file below (within `jsonSchema`).
 
 ```json
 {
