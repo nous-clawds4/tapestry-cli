@@ -25,7 +25,7 @@ Class threads and concepts are defined as per the tapestry protocol. Canonical w
 
 Any given concept starts with the node at the start of a class thread: **Class Thread Header** node. A fully-formed concept contains the Class Thread Header node plus 7 more for a total of **8 core nodes**:
 
-| # | Node Type | wordType(s) | Description |
+| # | Word Type | wordType(s) | Description |
 |---|-----------|-----------|-------------|
 | 1 | [**Class Thread Header**](./class-thread-header.md) | `word, classThreadHeader` | The concept itself |
 | 2 | [**Superset**](,/superset.md) | `word, superset` | The superset of all elements of the concept |
@@ -38,7 +38,7 @@ Any given concept starts with the node at the start of a class thread: **Class T
 
 In addition, an extended concept has these additional nodes:
 
-| # | Node Type | wordType(s) | Description |
+| # | Word Type | wordType(s) | Description |
 |---|-----------|-----------|-------------|
 | 1 | [**Property**](./property.md) | `word, property` | A regular property of coffee houses |
 | 2 | [**Set**](./set.md) | `word, set` | A particular list/set of coffee houses |
@@ -46,16 +46,15 @@ In addition, an extended concept has these additional nodes:
 
 Technically speaking, the formal definition of a concept is in terms of a graph: it is *the collection of all core + extended nodes and edges* that make up the graph. Informally, the word "concept" may sometimes be used to refer to the **Class Thread Header** node, and may sometimes be used to refer to the set of nodes and edges that make up the entire Concept Graph.
 
-Other canonical node types:
+Other canonical word types:
 
-| # | Node Type | wordTypes | Description |
+| # | Word Type | wordTypes | Description |
 |---|-----------|-----------|-------------|
-| 1 | **Node** | `node` | Any node in the graph |
 | 2 | [**Word**](./word.md) | `word` | Any node whose data structure is a json object (as opposed to, for instance, a jpeg) |
 | 3 | [**Relationship**](./relationship.md) | `word, relationship` | Any edge in the graph, directed or not, that connects two nodes |
 | 4 | [**Graph**](./graph.md) | `word, graph` | Any set of nodes and edges |
 | 5 | [**Relationship Type**](./relationshipType.md) | `word, relationshipType` | Any type of graph database relationship |
-| 6 | **Node Type** | `nodeType` | any type of node (eg, word) |
+| 6 | [**Node Type**](./nodeType.md) | `nodeType` | any type of node (eg, word) |
 | 7 | [**Word Type**](./wordType.md) | `word, wordType` | a type of word (e.g., coffeeHouse) |
 | 8 | [**Tapestry**](./tapestry.md) | `word, graph, tapestry` | a graph that validates against the tapestry rules of normalization; the union of many individual concept graphs |
 
