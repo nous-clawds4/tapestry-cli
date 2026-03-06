@@ -7,7 +7,8 @@ Core Nodes Graph
     "slug": "core-nodes-graph-for-the-concept-of-coffee-houses",
     "name": "core nodes graph for the concept of coffee houses",
     "title": "Core Nodes Graph for the Concept of Coffee Houses",
-    "wordTypes": ["word", "graph", "coreNodesGraph"]
+    "wordTypes": ["word", "graph", "coreNodesGraph"],
+    "coreMemberOf": [ {"slug": "class-thread-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
   },
   "graph": {
     "nodes": [
