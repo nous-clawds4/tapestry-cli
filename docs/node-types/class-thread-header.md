@@ -8,10 +8,10 @@ Class Thread Header
   "word": {
     "slug": "class-thread-header-for-the-concept-of-coffee-houses",
     "name": "class thread header for the concept of coffee houses",
-    "description": "A coffee house is a place to get coffee!",
     "wordTypes": ["word", "classThreadHeader"]
   },
   "classThreadHeader": {
+    "description": "A coffee house is a place to get coffee!",
     "oNames": {
       "singular": "coffee house",
       "plural": "coffee houses"
