@@ -33,8 +33,8 @@ Any given concept starts with the node at the start of a class thread: **Class T
 | 4 | [**Primary Property**](./primary-property.md) | `word, property, primaryProperty` | The root property for the JSON Schema |
 | 5 | [**Properties**](./properties.md) | `word, set, properties` | The set of property nodes for this concept |
 | 6 | [**Property Tree Graph**](./property-tree-graph.md) | `word, graph, propertyTreeGraph` | The graph that containst the JSON Schema, the Primary Property, and all downstream Property nodes |
-| 7 | [**Core Nodes Graph**](./core-nodes-graph.md) | `word, graph, conceptGraph` | A graph that contains all 7 core nodes and their interconnections. |
-| 8 | [**Concept Graph**](./concept-graph.md) | `word, graph, structuredElementsGraph` | The graph that contains the CTH, the Superset, all Set nodes, and all Elements of the concept. It also imports the superset threads and property tree graphs |
+| 7 | [**Core Nodes Graph**](./core-nodes-graph.md) | `word, graph, coreNodesGraph` | A graph that contains all core nodes and their interconnections. |
+| 8 | [**Concept Graph**](./concept-graph.md) | `word, graph, conceptGraph` | The graph that contains the concept header, the Superset, all Set nodes, and all Elements of the concept. It also imports the core nodes graph and property tree graph |
 
 In addition, an extended concept has these additional nodes:
 
