@@ -6,9 +6,9 @@ Class Thread Header
 ```json
 {
   "word": {
-    "slug": "class-thread-header-for-the-coffee-house-concept",
-    "name": "class thread header for the coffee house concept",
-    "description": "the class thread header for the coffee house concept",
+    "slug": "class-thread-header-for-the-concept-of-coffee-houses",
+    "name": "class thread header for the concept of coffee houses",
+    "description": "A coffee house is a place to get coffee!",
     "wordTypes": ["word", "classThreadHeader"]
   },
   "classThreadHeader": {
