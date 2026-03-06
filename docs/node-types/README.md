@@ -31,7 +31,7 @@ Any given concept starts with the node at the start of a class thread: **Class T
 | 2 | [**Superset**](,/superset.md) | `word, superset` | The superset of all elements of the concept |
 | 3 | [**JSON Schema**](./json-schema.md) | `word, jsonSchema` | The JSON Schema against which each element must validate |
 | 4 | [**Primary Property**](./primary-property.md) | `word, property, primaryProperty` | The root property for the JSON Schema |
-| 5 | [**Superset Threads Graph**](./superset-threads-graph.md) | `word, graph, supersetDescendantsGraph` | The graph that contains the Superset, all Set nodes, and all Elements of the concept |
+| 5 | [**Structured Elements Graph**](./structured-elements-graph.md) | `word, graph, structuredElementsGraph` | The graph that contains the Superset, all Set nodes, and all Elements of the concept |
 | 6 | [**Property Tree Graph**](./property-tree-graph.md) | `word, graph, propertyTreeGraph` | The graph that containst the JSON Schema, the Primary Property, and all downstream Property nodes |
 | 7 | [**Concept Graph**](./concept-graph.md) | `word, graph, conceptGraph` | A graph that contains all 7 core nodes and their interconnections, and which also imports the superset threads and property tree graphs |
 | 8 | [**Properties**](./properties.md) | `word, set, properties` | The set of property nodes for this concept |
