@@ -1,6 +1,8 @@
 Properties
 =====
 
+## Sample JSON (coffee house concept)
+
 ```json
 {
   "word": {
