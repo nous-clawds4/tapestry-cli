@@ -44,44 +44,44 @@ Class Thread Header
             "jsonSchema"
         ],
     },
-    "jsonSchemaData": {
-        "name": "concept",
-        "title": "Concept",
+    "jsonSchema": {
+        "name": "class thread header",
+        "title": "Class Thread Header",
         "$schema": "http://json-schema.org/draft-07/schema",
         "definitions": {},
         "type": "object",
         "required": [
-            "conceptData"
+            "classThreadHeader"
         ],
         "properties": {
-            "conceptData": {
+            "classThreadHeader": {
                 "type": "object",
-                "name": "concept data",
-                "title": "concept Data",
-                "description": "data about this concept",
+                "name": "class thread header",
+                "title": "Class Thread Header",
+                "description": "data about this class thread header",
                 "types": [
                     "primaryProperty"
                 ],
                 "require": true,
                 "required": [
-                    "name",
-                    "title",
-                    "slug"
+                    "oName",
+                    "oTitle",
+                    "oSlug"
                 ],
                 "unique": [
-                    "name",
-                    "title",
-                    "slug"
+                    "oName",
+                    "oTitle",
+                    "oSlug"
                 ],
                 "properties": {
-                    "slug": {
+                    "oSlug": {
                         "type": "string",
                         "name": "slug",
                         "title": "Slug",
                         "description": "The top-level slug for this concept",
                         "slug": "slug"
                     },
-                    "name": {
+                    "oName": {
                         "type": "object",
                         "name": "name",
                         "title": "Name",
@@ -109,7 +109,7 @@ Class Thread Header
                         },
                         "slug": "name"
                     },
-                    "title": {
+                    "oTitle": {
                         "type": "string",
                         "name": "title",
                         "title": "Title",
@@ -124,9 +124,9 @@ Class Thread Header
                         "slug": "description"
                     }
                 },
-                "slug": "conceptData"
+                "slug": "classThreadHeader"
             }
-        },
-    },
+        }
+    }
 }
 ```
