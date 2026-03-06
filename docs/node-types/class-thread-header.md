@@ -1,4 +1,4 @@
-Class Thread Header
+Concept Header
 =====
 
 ## Sample JSON (coffee house concept)
@@ -6,7 +6,7 @@ Class Thread Header
 ```json
 {
   "word": {
-    "slug": "class-thread-header-for-the-concept-of-coffee-houses",
+    "slug": "concept-header-for-the-concept-of-coffee-houses",
     "name": "class thread header for the concept of coffee houses",
     "title": "Class Thread Header for the Concept of Coffee Houses",
     "wordTypes": ["word", "classThreadHeader"]
