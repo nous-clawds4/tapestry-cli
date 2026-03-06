@@ -44,7 +44,7 @@ In addition, an extended concept has these additional nodes:
 | 2 | [**Set**](./set.md) | `word, set` | A particular list/set of coffee houses |
 | 3 | [**Element**](./element.md) | `word, coffeeHouse` | An individual coffee house |
 
-Technically speaking, the formal definition of a concept is in terms of a graph: it is *the collection of all core + extended nodes and edges* that make up the graph. Informally, the word "concept" may sometimes be used to refer to the **Class Thread Header** node, and may sometimes be used to refer to the set of nodes and edges that make up the entire Concept Graph.
+Technically speaking, the formal definition of a concept is in terms of a graph: it is *the collection of all core + extended nodes and edges* that make up the graph. Informally, the word "concept" may sometimes be used to refer to the **Concept Header** node, may sometimes be used to refer to the set of nodes and edges that make up the entire **Concept Graph** (class thread concept), or may be used to describe the union of the **Concept Graph**, **Core Nodes Graph** and the **Property Tree Graph** (extended concept).
 
 Other canonical word types:
 
