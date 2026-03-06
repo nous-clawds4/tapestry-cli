@@ -50,7 +50,7 @@ The above file should validate against the JSON schema within the file below (wi
     "jsonSchema": {
         "name": "class thread header",
         "title": "Class Thread Header",
-        "$schema": "http://json-schema.org/draft-07/schema",
+        "$schema": "http://json-schema.org/schema",
         "definitions": {},
         "type": "object",
         "required": [
