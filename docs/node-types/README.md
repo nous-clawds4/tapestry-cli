@@ -29,12 +29,12 @@ Any given concept starts with the node at the start of a class thread: **Class T
 |---|-----------|-----------|-------------|
 | 1 | [**Class Thread Header**](./class-thread-header.md) | `word, classThreadHeader` | The concept itself |
 | 2 | [**Superset**](,/superset.md) | `word, superset` | The superset of all elements of the concept |
-| 3 | **JSON Schema** | `word, jsonSchema` | The JSON Schema against which each element must validate |
-| 4 | **Primary Property** | `word, property, primaryProperty` | The root property for the JSON Schema |
-| 5 | **Superset Descendants Graph** | `word, graph, supersetDescendantsGraph` | The graph that contains the Superset, all Set nodes, and all Elements of the concept |
-| 6 | **Property Tree Graph** | `word, graph, propertyTreeGraph` | The graph that containst the JSON Schema, the Primary Property, and all downstream Property nodes |
-| 7 | **Concept Graph** | `word, graph, conceptGraph` | A graph that contains all 7 core nodes and their interconnections, and which also imports the clas |
-| 8 | **Properties** | `word, set, properties` | The set of property nodes for this concept |
+| 3 | [**JSON Schema**](./jsonSchema.md) | `word, jsonSchema` | The JSON Schema against which each element must validate |
+| 4 | [**Primary Property**](./primaryProperty.md) | `word, property, primaryProperty` | The root property for the JSON Schema |
+| 5 | [**Superset Descendants Graph**](./superset.md) | `word, graph, supersetDescendantsGraph` | The graph that contains the Superset, all Set nodes, and all Elements of the concept |
+| 6 | [**Property Tree Graph**](./propertyTreeGraph.md) | `word, graph, propertyTreeGraph` | The graph that containst the JSON Schema, the Primary Property, and all downstream Property nodes |
+| 7 | [**Concept Graph**](./conceptGraphs.md) | `word, graph, conceptGraph` | A graph that contains all 7 core nodes and their interconnections, and which also imports the clas |
+| 8 | [**Properties**](./properties.md) | `word, set, properties` | The set of property nodes for this concept |
 
 In addition, an extended concept has these additional nodes:
 
