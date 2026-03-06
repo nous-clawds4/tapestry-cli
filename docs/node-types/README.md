@@ -38,6 +38,7 @@ Any given concept starts with the node at the start of a class thread: **Class T
 In addition, an extended concept has these additional nodes:
 
 | # | Node Type | wordType(s) | Description |
+|---|-----------|-----------|-------------|
 | 1 | **Property** | `word, property` | A regular property of coffee houses |
 | 2 | **Set** | `word, set` | A particular list/set of coffee houses |
 | 3 | **Element** | `word, coffeeHouse` | An individual coffee house |
