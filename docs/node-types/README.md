@@ -46,7 +46,7 @@ In addition, any given concept is associated with these additional word types:
 | 2 | [**Set**](./set.md) | `word, set` | A particular list/set of coffee houses |
 | 3 | [**Element**](./element.md) | `word, coffeeHouse` | An individual coffee house |
 
-Technically speaking, the formal definition of a concept cannot be stated without reference to the class thread rule: it is a *graph*, a *collection of all the nodes and edges traversed by every class thread that emanates from a single node*. That single node is referred to as the *concept header* node (also know as the *class thread header node*. And the collection of nodes + edges is referred to as the *concept graph*.
+Technically speaking, the formal definition of a concept cannot be stated without reference to the class thread rule: it is a *graph*, a *collection of all the nodes and edges traversed by every class thread that emanates from a single node* [1]. That single node is referred to as the *concept header* node (also know as the *class thread header node*. And the collection of nodes + edges is referred to as the *concept graph*.
 
 The word *concept* by itself can have 3 different meanings, depending on the context:
 1. the **Concept Header** node
@@ -73,3 +73,7 @@ Other canonical word types:
 - **`title`**: PascalCase / Title Case display name (e.g., `Coffee House`), used for node labels as per the neo4j convention
 - **`uuid`**: the a-tag (`kind:pubkey:d-tag`) for replaceable events; derivable from the event itself
 - **`RELATIONSHIP_TYPE`**: SCREAMING_SNAKE_CASE, used for relationship types as per the neo4j convention
+
+## Notes
+
+[1] Keep in mind that the HAS_ELEMENT relationship, also known as the "class thread termination" relationship, can be *implicitly* inferred by two things: 1) the presence of a class thread initiation node and 2) a z-tag with the uuid of the source of a class thread initiation relationship. A node that is the source of a class thread initiation node but lacks elements (whether definied explicitly or implicitly) shall be referred to as a *proto concept*. Conversely: a List Header is any node that has List Items. Therefore, and List Header node that is the nodeFrom of a class thread initiation node meets the definition of a concept and should be labelled a **Concept Header** node.
