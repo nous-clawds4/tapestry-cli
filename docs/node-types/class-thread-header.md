@@ -73,20 +73,25 @@ The above file should validate against the JSON schema within the file below (wi
                 "name": "class-thread-header",
                 "description": "data about this class thread header",
                 "required": [
-                    "oName",
-                    "oTitle",
-                    "oSlug"
+                    "oNames",
+                    "oSlugs",
+                    "oKeyes",
+                    "oTitles",
+                    "oLabels"
                 ],
                 "unique": [
-                    "oName",
-                    "oTitle",
-                    "oSlug"
+                    "oNames",
+                    "oSlugs",
+                    "oKeyes",
+                    "oTitles",
+                    "oLabels"
                 ],
                 "properties": {
-                    "oName": {
+                    "oNames": {
                         "type": "object",
                         "name": "name",
                         "title": "Name",
+                        "slug": "name",
                         "description": "The top-level name for this concept",
                         "required": [
                             "singular",
@@ -108,14 +113,14 @@ The above file should validate against the JSON schema within the file below (wi
                                 "description": "",
                                 "slug": "plural"
                             }
-                        },
-                        "slug": "name"
+                        }
                     },
-                    "oTitle": {
+                    "oSlugs": {
                         "type": "object",
-                        "name": "name",
-                        "title": "Name",
-                        "description": "The top-level name for this concept",
+                        "name": "slug",
+                        "title": "Slug",
+                        "slug": "slug",
+                        "description": "The top-level slug for this concept",
                         "required": [
                             "singular",
                             "plural"
@@ -136,14 +141,14 @@ The above file should validate against the JSON schema within the file below (wi
                                 "description": "",
                                 "slug": "plural"
                             }
-                        },
-                        "slug": "name"
+                        }
                     },
-                    "oSlug": {
+                    "oKeyes": {
                         "type": "object",
-                        "name": "name",
-                        "title": "Name",
-                        "description": "The top-level name for this concept",
+                        "name": "key",
+                        "title": "Key",
+                        "slug": "key",
+                        "description": "The top-level key for this concept",
                         "required": [
                             "singular",
                             "plural"
@@ -164,8 +169,63 @@ The above file should validate against the JSON schema within the file below (wi
                                 "description": "",
                                 "slug": "plural"
                             }
-                        },
-                        "slug": "name"
+                        }
+                    },
+                    "oTitles": {
+                        "type": "object",
+                        "name": "title",
+                        "title": "Title",
+                        "slug": "title",
+                        "description": "The top-level title for this concept",
+                        "required": [
+                            "singular",
+                            "plural"
+                        ],
+                        "unique": [],
+                        "properties": {
+                            "singular": {
+                                "type": "string",
+                                "name": "singular",
+                                "title": "Singular",
+                                "description": "",
+                                "slug": "singular"
+                            },
+                            "plural": {
+                                "type": "string",
+                                "name": "plural",
+                                "title": "Plural",
+                                "description": "",
+                                "slug": "plural"
+                            }
+                        }
+                    },
+                    "olabels": {
+                        "type": "object",
+                        "name": "label",
+                        "title": "Label",
+                        "slug": "label",
+                        "description": "The top-level label for this concept",
+                        "required": [
+                            "singular",
+                            "plural"
+                        ],
+                        "unique": [],
+                        "properties": {
+                            "singular": {
+                                "type": "string",
+                                "name": "singular",
+                                "title": "Singular",
+                                "description": "",
+                                "slug": "singular"
+                            },
+                            "plural": {
+                                "type": "string",
+                                "name": "plural",
+                                "title": "Plural",
+                                "description": "",
+                                "slug": "plural"
+                            }
+                        }
                     },
                     "description": {
                         "type": "string",
