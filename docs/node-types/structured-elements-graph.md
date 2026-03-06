@@ -42,19 +42,6 @@ Structured Elements Graph
       },
     ]
   },
-  "structuredElemetsGraph": {
-    "imports": [
-      {
-        "slug": "properties-tree-graph-for-the-concept-of-coffee-houses",
-        "name": "properties tree graph for the concept of coffee houses",
-        "uuid": ""
-      },
-      {
-        "slug": "structured-elements-graph-for-the-concept-of-coffee-houses",
-        "name": "structured elements graph for the concept of coffee houses",
-        "uuid": ""
-      }
-    ]
-  }
+  "structuredElemetsGraph": {}
 }
 ```
