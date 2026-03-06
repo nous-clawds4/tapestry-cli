@@ -12,15 +12,15 @@ Class Thread Header
     "wordTypes": ["word", "classThreadHeader"]
   },
   "classThreadHeader": {
-    "names": {
+    "oNames": {
       "singular": "coffee house",
       "plural": "coffee houses"
     },
-    "slugs": {
+    "OSlugs": {
       "singular": "coffee-house",
       "plural": "coffee-houses"
     },
-    "titles": {
+    "oTitles": {
       "singular": "Coffee House",
       "plural": "Coffee Houses"
     },
