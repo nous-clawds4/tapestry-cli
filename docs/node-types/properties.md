@@ -14,7 +14,7 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
     "name": "properties for the concept of coffee houses",
     "title": "Properties for the Concept of Coffee Houses",
     "wordTypes": ["word", "set", "properties"],
-    "coreMemberOf": [ {"slug": "class-thread-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
+    "coreMemberOf": [ {"slug": "concept-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
   },
   "set": {
   },
