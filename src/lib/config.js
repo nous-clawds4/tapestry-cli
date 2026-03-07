@@ -91,7 +91,7 @@ const DEFAULTS = {
   ],
 
   // ── Docker ──
-  'docker.container': 'tapestry-tapestry-1',
+  'docker.container': 'tapestry',
 
   // ── Neo4j ──
   'neo4j.user':     'neo4j',

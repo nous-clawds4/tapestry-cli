@@ -1,12 +1,11 @@
 /**
  * tapestry normalize — housekeeping commands for concept graph integrity
+ *
+ * Check commands are read-only (Cypher queries via API).
+ * Fix commands call server API endpoints to create/repair events.
  */
 
-import { randomBytes } from 'crypto';
-import { apiGet } from '../lib/api.js';
-import { signEvent } from '../lib/signer.js';
-import { importEventsAndSync } from '../lib/neo4j.js';
-import { uuid } from '../lib/config.js';
+import { apiGet, apiPost } from '../lib/api.js';
 import { normalizeSkeletonCommand } from './normalize-skeleton.js';
 import { normalizeJsonCommand } from './normalize-json.js';
 
@@ -43,7 +42,6 @@ export function normalizeCommand(program) {
     .command('fix-supersets')
     .description('Create missing Superset nodes for ListHeaders')
     .option('--dry-run', 'Show what would be created without doing it')
-    .option('--personal', 'Sign with personal nsec from 1Password')
     .action(async (opts) => {
       await fixSupersets(opts);
     });
@@ -76,7 +74,6 @@ async function cypher(query) {
   const lines = raw.split('\n');
   const header = lines[0].split(', ').map(h => h.trim());
   return lines.slice(1).map(line => {
-    // Simple CSV parse — handles quoted strings
     const values = [];
     let current = '';
     let inQuote = false;
@@ -119,7 +116,6 @@ async function checkOrphans() {
   console.log('\n🔍 Checking for orphaned ListItems...\n');
 
   // ── DList Orphans (Rule 2) ──
-  // ListItems whose z-tag points to a parent that doesn't exist in the database
   console.log('━'.repeat(50));
   console.log('DList Orphans (Rule 2)');
   console.log('Items whose z-tag references a nonexistent parent event\n');
@@ -146,20 +142,16 @@ async function checkOrphans() {
   }
 
   // ── Class Thread Orphans (Rule 3) ──
-  // ListItems with a valid parent, but no HAS_ELEMENT from any Superset
-  // Broken into: inferrable (z-tag chain is valid) vs true orphans
   console.log('━'.repeat(50));
   console.log('Class Thread Orphans (Rule 3)');
   console.log('Items not reachable via Superset → HAS_ELEMENT\n');
 
-  // Items that ARE wired up
   const wiredUp = await cypher(
     "MATCH (:Superset)-[:HAS_ELEMENT]->(i:ListItem) " +
     "RETURN count(DISTINCT i) AS cnt"
   );
   const wiredCount = parseInt(wiredUp[0]?.cnt || '0');
 
-  // Element items (exclude structural node types)
   const totalElements = await cypher(
     "MATCH (i:ListItem) " +
     "WHERE NOT i:Superset AND NOT i:Property AND NOT i:JSONSchema AND NOT i:Relationship " +
@@ -171,18 +163,14 @@ async function checkOrphans() {
   console.log(`  Wired via HAS_ELEMENT:   ${wiredCount}`);
   console.log(`  Missing HAS_ELEMENT:     ${totalCount - wiredCount}\n`);
 
-  // Break down the Class Thread orphans by concept, showing which are inferrable
   const ctOrphans = await cypher(
     "MATCH (i:ListItem)-[:HAS_TAG]->(z:NostrEventTag {type: 'z'}) " +
     "WHERE NOT i:Superset AND NOT i:Property AND NOT i:JSONSchema AND NOT i:Relationship " +
     "AND NOT (:Superset)-[:HAS_ELEMENT]->(i) " +
-    // Only items whose z-tag DOES resolve (DList orphans handled above)
     "AND EXISTS { MATCH (h) WHERE h.uuid = z.value AND (h:ListHeader OR h:ListItem) } " +
     "WITH z.value AS parentUuid, count(i) AS itemCount " +
-    // Get the parent's name
     "MATCH (h) WHERE h.uuid = parentUuid AND (h:ListHeader OR h:ListItem) " +
     "OPTIONAL MATCH (h)-[:HAS_TAG]->(t:NostrEventTag) WHERE t.type IN ['names', 'name'] " +
-    // Check if parent has a Superset (inferrable = could be wired up)
     "OPTIONAL MATCH (h)-[:IS_THE_CONCEPT_FOR]->(s:Superset) " +
     "RETURN COALESCE(t.value, '(unnamed)') AS concept, parentUuid, itemCount, " +
     "CASE WHEN s IS NOT NULL THEN 'inferrable' ELSE 'blocked' END AS status " +
@@ -200,20 +188,13 @@ async function checkOrphans() {
       const icon = row.status === 'inferrable' ? '🔗' : '🚫';
       const label = row.status === 'inferrable' ? 'inferrable' : 'blocked (no Superset)';
       console.log(`     ${icon} "${row.concept}" — ${row.itemCount} item(s) [${label}]`);
-
-      if (row.status === 'inferrable') {
-        inferrableTotal += parseInt(row.itemCount);
-      } else {
-        blockedTotal += parseInt(row.itemCount);
-      }
+      if (row.status === 'inferrable') inferrableTotal += parseInt(row.itemCount);
+      else blockedTotal += parseInt(row.itemCount);
     }
 
     console.log(`\n  Summary:`);
     console.log(`     🔗 Inferrable (Superset exists, HAS_ELEMENT missing): ${inferrableTotal}`);
-    console.log(`     🚫 Blocked (parent has no Superset):                  ${blockedTotal}`);
-    console.log(`\n  Inferrable orphans have a valid z-tag chain and could be wired up`);
-    console.log(`  with HAS_ELEMENT relationships, but may be intentionally left`);
-    console.log(`  inferred to keep the graph compact.\n`);
+    console.log(`     🚫 Blocked (parent has no Superset):                  ${blockedTotal}\n`);
   }
 
   // ── Grand Summary ──
@@ -227,10 +208,11 @@ async function checkOrphans() {
 async function fixSupersets(opts) {
   console.log('\n🔧 Fixing missing Superset nodes...\n');
 
+  // Find concepts missing supersets
   const rows = await cypher(
     "MATCH (h:ListHeader)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'}) " +
     "WHERE NOT (h)-[:IS_THE_CONCEPT_FOR]->(:Superset) " +
-    "RETURN DISTINCT t.value AS concept, t.value1 AS plural, h.uuid AS aTag, h.pubkey AS pubkey " +
+    "RETURN DISTINCT t.value AS concept " +
     "ORDER BY concept"
   );
 
@@ -242,85 +224,33 @@ async function fixSupersets(opts) {
   console.log(`Found ${rows.length} ListHeader(s) needing Superset nodes.\n`);
 
   if (opts.dryRun) {
-    console.log('🏜️  Dry run — showing what would be created:\n');
     for (const row of rows) {
-      const plural = row.plural || row.concept + 's';
-      console.log(`  📝 "${row.concept}" → Superset: "the superset of all ${plural}"`);
-      console.log(`     z-tag: ${uuid('superset')}`);
-      console.log(`     nodeFrom: <new superset uuid>`);
-      console.log(`     nodeTo: ${row.aTag}`);
-      console.log('');
+      console.log(`  📝 Would create skeleton for "${row.concept}"`);
     }
-    console.log(`Would create ${rows.length} Superset events + ${rows.length} Relationship events.\n`);
+    console.log('');
     return;
   }
 
-  let created = 0;
-  const events = [];
-
+  let fixed = 0;
   for (const row of rows) {
-    const plural = row.plural || row.concept + 's';
-    const supersetName = `the superset of all ${plural}`;
-    const dTag = randomBytes(4).toString('hex');
-
-    console.log(`  📝 "${row.concept}" → "${supersetName}"`);
-
-    // Create the Superset ListItem (kind 39999)
-    const supersetEvent = await signEvent({
-      kind: 39999,
-      tags: [
-        ['d', dTag],
-        ['name', supersetName],
-        ['z', uuid('superset')],
-      ],
-      content: '',
-    }, { personal: opts.personal });
-
-    events.push(supersetEvent);
-
-    // Create the IS_THE_CONCEPT_FOR Relationship ListItem (kind 39999)
-    // This connects the ListHeader to its new Superset
-    const supersetATag = `39999:${supersetEvent.pubkey}:${dTag}`;
-    const relDTag = randomBytes(4).toString('hex');
-
-    // The relationship's z-tag points to the canonical "relationship" concept
-    // UUID for IS_THE_CONCEPT_FOR relationship type
-    const IS_THE_CONCEPT_FOR_UUID = '39999:e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f:24bc3eb6-fd75-4679-a3d7-d0b1a2a62be8';
-
-    const relEvent = await signEvent({
-      kind: 39999,
-      tags: [
-        ['d', relDTag],
-        ['name', `${row.concept} IS_THE_CONCEPT_FOR ${supersetName}`],
-        ['z', uuid('relationship')],
-        ['nodeFrom', row.aTag],
-        ['nodeTo', supersetATag],
-        ['relationshipType', 'IS_THE_CONCEPT_FOR'],
-      ],
-      content: '',
-    }, { personal: opts.personal });
-
-    events.push(relEvent);
-    created++;
-    console.log(`     ✅ Superset: ${supersetEvent.id.slice(0, 12)}...`);
-    console.log(`     ✅ Relationship: ${relEvent.id.slice(0, 12)}...`);
+    console.log(`  📝 "${row.concept}"...`);
+    const result = await apiPost('/api/normalize/skeleton', {
+      concept: row.concept,
+      node: 'superset',
+    });
+    if (result.success) {
+      console.log(`     ✅ ${result.message}`);
+      fixed++;
+    } else {
+      console.log(`     ❌ ${result.error}`);
+    }
   }
 
-  // Import all events into strfry + targeted Neo4j import
-  console.log(`\n  📡 Importing ${events.length} events...`);
-  try {
-    await importEventsAndSync(events);
-  } catch (err) {
-    console.error(`  ❌ Import failed: ${err.message}`);
-    return;
-  }
-
-  console.log(`\n✨ Created ${created} Superset nodes with IS_THE_CONCEPT_FOR relationships.\n`);
+  console.log(`\n✨ Fixed ${fixed}/${rows.length} concepts.\n`);
 }
 
 // ─── Rule 11: JSON Schema deduplication ──────────────────────
 
-// Principal author = Tapestry Assistant (default signer from BRAINSTORM_RELAY_NSEC)
 const PRINCIPAL_PUBKEY = '2d1fe9d3e0a3f3c0cf41812ba2075eb931b535b432fbdb2a6da430593d569e38';
 
 async function checkSchemas() {
@@ -346,7 +276,6 @@ async function checkSchemas() {
   for (const row of rows) {
     console.log(`  ❌ "${row.conceptName || '(unnamed)'}"`);
     console.log(`     UUID: ${row.uuid}`);
-    // The schemas field comes back as a string from our CSV parser
     console.log(`     Schemas: ${row.schemas}`);
     console.log('');
   }
@@ -356,7 +285,9 @@ async function checkSchemas() {
 async function fixSchemas(opts) {
   console.log('\n🔧 Resolving concepts with multiple JSON Schema nodes (Rule 11)...\n');
 
-  // Find concepts with >1 schema
+  // This function only manipulates Neo4j relationships (no event creation),
+  // so it uses Cypher queries directly via the API. No local signing needed.
+
   const concepts = await cypher(
     "MATCH (js:JSONSchema)-[:IS_THE_JSON_SCHEMA_FOR]->(h) " +
     "OPTIONAL MATCH (h)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'}) " +
@@ -377,7 +308,6 @@ async function fixSchemas(opts) {
   for (const concept of concepts) {
     console.log(`  📋 "${concept.conceptName || '(unnamed)'}"`);
 
-    // Get details for each schema on this concept
     const schemas = await cypher(
       "MATCH (js:JSONSchema)-[:IS_THE_JSON_SCHEMA_FOR]->(h {uuid: '" + concept.uuid + "'}) " +
       "OPTIONAL MATCH (js)-[:HAS_TAG]->(jn:NostrEventTag {type: 'name'}) " +
@@ -388,32 +318,17 @@ async function fixSchemas(opts) {
       "  count(DISTINCT p) AS propCount"
     );
 
-    // Select the winner using the heuristic:
-    // 1. Principal author match
-    // 2. Content over empty
-    // 3. Most properties
-    let winner = null;
-    const losers = [];
+    // Select winner by heuristic
+    let winner = schemas.find(s => s.author === PRINCIPAL_PUBKEY && s.hasJson === 'yes')
+      || schemas.find(s => s.author === PRINCIPAL_PUBKEY)
+      || schemas.find(s => s.hasJson === 'yes')
+      || schemas.sort((a, b) => parseInt(b.propCount) - parseInt(a.propCount))[0];
 
-    // Priority 1: principal author with content
-    winner = schemas.find(s => s.author === PRINCIPAL_PUBKEY && s.hasJson === 'yes');
-    // Priority 2: principal author (even without content)
-    if (!winner) winner = schemas.find(s => s.author === PRINCIPAL_PUBKEY);
-    // Priority 3: any schema with content
-    if (!winner) winner = schemas.find(s => s.hasJson === 'yes');
-    // Priority 4: most properties
-    if (!winner) {
-      schemas.sort((a, b) => parseInt(b.propCount) - parseInt(a.propCount));
-      winner = schemas[0];
-    }
+    const losers = schemas.filter(s => s.uuid !== winner.uuid);
 
-    for (const s of schemas) {
-      if (s.uuid !== winner.uuid) losers.push(s);
-    }
-
-    console.log(`     ✅ Keep: "${winner.name}" (${winner.author === PRINCIPAL_PUBKEY ? 'principal' : winner.author?.slice(0, 8) + '...'}, json=${winner.hasJson}, ${winner.propCount} props)`);
+    console.log(`     ✅ Keep: "${winner.name}" (json=${winner.hasJson}, ${winner.propCount} props)`);
     for (const loser of losers) {
-      console.log(`     ❌ Deprecate: "${loser.name}" (${loser.author?.slice(0, 8) + '...'}, json=${loser.hasJson}, ${loser.propCount} props)`);
+      console.log(`     ❌ Deprecate: "${loser.name}" (json=${loser.hasJson}, ${loser.propCount} props)`);
     }
 
     if (opts.dryRun) {
@@ -421,15 +336,10 @@ async function fixSchemas(opts) {
       continue;
     }
 
-    // For each loser: remove IS_THE_JSON_SCHEMA_FOR, re-wire or remove properties, add SUPERCEDES
     for (const loser of losers) {
-      // 1. Remove IS_THE_JSON_SCHEMA_FOR
-      await cypher(
-        "MATCH (js {uuid: '" + loser.uuid + "'})-[r:IS_THE_JSON_SCHEMA_FOR]->(h {uuid: '" + concept.uuid + "'}) DELETE r"
-      );
+      await cypher("MATCH (js {uuid: '" + loser.uuid + "'})-[r:IS_THE_JSON_SCHEMA_FOR]->(h {uuid: '" + concept.uuid + "'}) DELETE r");
       console.log(`     🔗 Removed IS_THE_JSON_SCHEMA_FOR from "${loser.name}"`);
 
-      // 2. Re-wire properties: if same name exists on winner, just remove; otherwise re-wire
       const loserProps = await cypher(
         "MATCH (p:Property)-[:IS_A_PROPERTY_OF]->(js {uuid: '" + loser.uuid + "'}) " +
         "OPTIONAL MATCH (p)-[:HAS_TAG]->(pn:NostrEventTag {type: 'name'}) " +
@@ -437,43 +347,28 @@ async function fixSchemas(opts) {
       );
 
       for (const lp of loserProps) {
-        // Check if winner already has a property with this name
         const existing = await cypher(
           "MATCH (p:Property)-[:IS_A_PROPERTY_OF]->(js {uuid: '" + winner.uuid + "'}) " +
           "MATCH (p)-[:HAS_TAG]->(pn:NostrEventTag {type: 'name', value: '" + (lp.name || '') + "'}) " +
           "RETURN p.uuid AS uuid"
         );
 
-        // Remove edge from loser schema
-        await cypher(
-          "MATCH (p {uuid: '" + lp.uuid + "'})-[r:IS_A_PROPERTY_OF]->(js {uuid: '" + loser.uuid + "'}) DELETE r"
-        );
+        await cypher("MATCH (p {uuid: '" + lp.uuid + "'})-[r:IS_A_PROPERTY_OF]->(js {uuid: '" + loser.uuid + "'}) DELETE r");
 
         if (existing.length > 0) {
-          console.log(`     🔗 Removed duplicate IS_A_PROPERTY_OF for "${lp.name}" (already on winner)`);
+          console.log(`     🔗 Removed duplicate property "${lp.name}"`);
         } else {
-          // Re-wire to winner
-          await cypher(
-            "MATCH (p {uuid: '" + lp.uuid + "'}), (js {uuid: '" + winner.uuid + "'}) " +
-            "CREATE (p)-[:IS_A_PROPERTY_OF]->(js)"
-          );
-          console.log(`     🔗 Re-wired IS_A_PROPERTY_OF for "${lp.name}" to winner schema`);
+          await cypher("MATCH (p {uuid: '" + lp.uuid + "'}), (js {uuid: '" + winner.uuid + "'}) CREATE (p)-[:IS_A_PROPERTY_OF]->(js)");
+          console.log(`     🔗 Re-wired property "${lp.name}" to winner`);
         }
       }
 
-      // 3. Create SUPERCEDES relationship
-      // Check if it already exists
       const existingSupercedes = await cypher(
         "MATCH (a {uuid: '" + winner.uuid + "'})-[:SUPERCEDES]->(b {uuid: '" + loser.uuid + "'}) RETURN count(*) AS cnt"
       );
       if (parseInt(existingSupercedes[0]?.cnt || '0') === 0) {
-        await cypher(
-          "MATCH (a {uuid: '" + winner.uuid + "'}), (b {uuid: '" + loser.uuid + "'}) " +
-          "CREATE (a)-[:SUPERCEDES]->(b)"
-        );
-        console.log(`     🔗 Created SUPERCEDES: "${winner.name}" → "${loser.name}"`);
-      } else {
-        console.log(`     ℹ️  SUPERCEDES already exists`);
+        await cypher("MATCH (a {uuid: '" + winner.uuid + "'}), (b {uuid: '" + loser.uuid + "'}) CREATE (a)-[:SUPERCEDES]->(b)");
+        console.log(`     🔗 Created SUPERCEDES audit trail`);
       }
     }
 
@@ -493,29 +388,20 @@ async function checkAll() {
   console.log('\n🔍 Tapestry Normalization Check\n');
   console.log('━'.repeat(50));
 
-  // Rule 1: Missing supersets (only count real concepts — those with a 'names' tag)
   console.log('\nRule 1: Every ListHeader must have a Superset');
   const missingSupersets = await cypher(
     "MATCH (h:ListHeader)-[:HAS_TAG]->(:NostrEventTag {type: 'names'}) " +
     "WHERE NOT (h)-[:IS_THE_CONCEPT_FOR]->(:Superset) RETURN count(DISTINCT h) AS cnt"
   );
   const missingCount = parseInt(missingSupersets[0]?.cnt || '0');
-
-  // Also count mislabeled ListHeaders (no 'names' tag — likely protocol data, not concepts)
   const mislabeled = await cypher(
     "MATCH (h:ListHeader) WHERE NOT (h)-[:HAS_TAG]->(:NostrEventTag {type: 'names'}) RETURN count(h) AS cnt"
   );
   const mislabeledCount = parseInt(mislabeled[0]?.cnt || '0');
-  if (missingCount === 0) {
-    console.log('  ✅ Pass');
-  } else {
-    console.log(`  ❌ ${missingCount} ListHeader(s) missing Superset nodes`);
-  }
-  if (mislabeledCount > 0) {
-    console.log(`  ℹ️  ${mislabeledCount} ListHeader node(s) have no 'names' tag (likely non-concept protocol data)`);
-  }
+  if (missingCount === 0) console.log('  ✅ Pass');
+  else console.log(`  ❌ ${missingCount} ListHeader(s) missing Superset nodes`);
+  if (mislabeledCount > 0) console.log(`  ℹ️  ${mislabeledCount} ListHeader(s) have no 'names' tag`);
 
-  // Rule 2: Orphaned items
   console.log('\nRule 2: Every ListItem must have a valid parent pointer');
   const orphans = await cypher(
     "MATCH (i:ListItem)-[:HAS_TAG]->(z:NostrEventTag {type: 'z'}) " +
@@ -523,50 +409,32 @@ async function checkAll() {
     "RETURN count(DISTINCT i) AS cnt"
   );
   const orphanCount = parseInt(orphans[0]?.cnt || '0');
-  if (orphanCount === 0) {
-    console.log('  ✅ Pass');
-  } else {
-    console.log(`  ❌ ${orphanCount} ListItem(s) with invalid parent references`);
-  }
+  if (orphanCount === 0) console.log('  ✅ Pass');
+  else console.log(`  ❌ ${orphanCount} ListItem(s) with invalid parent references`);
 
-  // Rule 7: Duplicate concepts (same author, same name)
   console.log('\nRule 7: No duplicate concepts per author');
   const dupes = await cypher(
     "MATCH (h:ListHeader)-[:HAS_TAG]->(t:NostrEventTag {type: 'names'}) " +
     "WITH h.pubkey AS pubkey, t.value AS name, count(h) AS cnt " +
-    "WHERE cnt > 1 " +
-    "RETURN name, pubkey, cnt"
+    "WHERE cnt > 1 RETURN name, pubkey, cnt"
   );
-  if (dupes.length === 0) {
-    console.log('  ✅ Pass');
-  } else {
+  if (dupes.length === 0) console.log('  ✅ Pass');
+  else {
     console.log(`  ❌ ${dupes.length} duplicate concept(s):`);
-    for (const d of dupes) {
-      console.log(`     "${d.name}" — ${d.cnt}x by ${d.pubkey?.slice(0, 8)}...`);
-    }
+    for (const d of dupes) console.log(`     "${d.name}" — ${d.cnt}x by ${d.pubkey?.slice(0, 8)}...`);
   }
 
-  // Rule 11: Duplicate JSON Schemas
   console.log('\nRule 11: Every concept must have at most one active JSON Schema');
   const dupSchemas = await cypher(
     "MATCH (js:JSONSchema)-[:IS_THE_JSON_SCHEMA_FOR]->(h) " +
-    "WITH h, count(DISTINCT js) AS cnt " +
-    "WHERE cnt > 1 " +
-    "RETURN count(h) AS total"
+    "WITH h, count(DISTINCT js) AS cnt WHERE cnt > 1 RETURN count(h) AS total"
   );
   const dupSchemaCount = parseInt(dupSchemas[0]?.total || '0');
-  if (dupSchemaCount === 0) {
-    console.log('  ✅ Pass');
-  } else {
-    console.log(`  ❌ ${dupSchemaCount} concept(s) with multiple JSON Schema nodes`);
-  }
+  if (dupSchemaCount === 0) console.log('  ✅ Pass');
+  else console.log(`  ❌ ${dupSchemaCount} concept(s) with multiple JSON Schema nodes`);
 
-  // Summary
   const total = missingCount + orphanCount + dupes.length + dupSchemaCount;
   console.log('\n' + '━'.repeat(50));
-  if (total === 0) {
-    console.log('✅ Graph is fully normalized!\n');
-  } else {
-    console.log(`⚠️  ${total} issue(s) found. Run specific fix commands to resolve.\n`);
-  }
+  if (total === 0) console.log('✅ Graph is fully normalized!\n');
+  else console.log(`⚠️  ${total} issue(s) found. Run specific fix commands to resolve.\n`);
 }
