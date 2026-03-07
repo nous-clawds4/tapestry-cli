@@ -46,11 +46,10 @@ The above file should validate against the JSON schema within the file below (wi
 ```json
 {
     "word": {
-        "slug": "json-schema-for-concept-header",
-        "title": "JSON Schema for Concept Header",
-        "name": "JSON Schema for concept header",
-        "name": "This is the JSON Schema for the concept of concept headers. Every element of this concept must validate against this JSON schema.",
-        "description": "",
+        "slug": "json-schema-for-the-concept-of-concept-headers",
+        "title": "JSON Schema for the concept of Concept Headers",
+        "name": "JSON Schema for the concept of concept headers",
+        "description": "This is the JSON Schema for elements of the concept of concept headers. Every element of this concept must validate against this JSON schema.",
         "wordTypes": [
             "word",
             "jsonSchema"
