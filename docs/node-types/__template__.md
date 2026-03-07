@@ -18,7 +18,7 @@ Foo Bar
 
 ## JSON Schema node
 
-This is the JSON Schema node for the concept of ``.
+This is the JSON Schema node for the concept of `foo bars`.
 
 The above file should validate against the JSON schema within the file below (within `jsonSchema`).
 
