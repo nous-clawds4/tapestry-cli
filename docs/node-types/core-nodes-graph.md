@@ -5,7 +5,7 @@ Core Nodes Graph
 
 - the `core nodes graph` for the concept of `coffee houses`
 
-It is one of the `core nodes` for the concept of `coffee houses`.
+It is one of the 8 `core nodes` for the concept of `coffee houses`.
 
 ```json
 {
