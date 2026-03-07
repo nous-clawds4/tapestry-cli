@@ -3,7 +3,7 @@ Core Nodes Graph
 
 ## Example of a Core Nodes Graph
 
-This example is the Core Nodes Graph for the concept of `coffee houses`.
+- the Core Nodes Graph for the concept of `coffee houses`
 
 It is one of the `core nodes` for the concept of `coffee houses`.
 
