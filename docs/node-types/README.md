@@ -38,7 +38,7 @@ A fully-formed concept contains the **Concept Header** node plus 7 more for a to
 | 7 | [**Core Nodes Graph**](./core-nodes-graph.md) | `word, graph, coreNodesGraph` | A graph that contains all core nodes and their interconnections. |
 | 8 | [**Concept Graph**](./concept-graph.md) | `word, graph, conceptGraph` | The graph that contains the concept header, the Superset, all Set nodes, and all Elements of the concept. It also imports the core nodes graph and property tree graph |
 
-### Extended Concept Word Types
+### Other Concept Word Types
 
 In addition, any given concept is associated with these additional word types:
 
