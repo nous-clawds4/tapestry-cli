@@ -59,8 +59,8 @@ The above file should validate against the JSON schema within the file below (wi
         ],
     },
     "jsonSchema": {
-        "name": "",
-        "title": "",
+        "name": "primary property",
+        "title": "Primary Property",
         "$schema": "http://json-schema.org/schema",
         "definitions": {},
         "type": "object",
