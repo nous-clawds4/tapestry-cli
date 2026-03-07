@@ -19,19 +19,65 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
   "graph": {
     "nodes": [
       {
-        "slug": "",
-        "uuid": "<uuid>"
-      }
-    ],
-    "relationshipTypes": [
-      {
-        "slug": "IS_A_SUPERSET_OF",
-        "name": "class thread propagation",
+        "slug": "concept-graph-for-the-concept-of-coffee-houses",
         "uuid": "<uuid>"
       },
       {
-        "slug": "HAS_ELEMENT",
-        "name": "class thread termination",
+        "slug": "concept-header-for-the-concept-of-coffee-houses",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "core-nodes-graph-for-the-concept-of-coffee-houses",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "json-schema-for-the-concept-of-coffee-houses",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "primary-properties-for-the-concept-of-coffee-houses",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "properties-for-the-concept-of-coffee-houses",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "property-tree-graph-for-the-concept-of-coffee-houses",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "superset-for-the-concept-of-coffee-houses",
+        "uuid": "<uuid>"
+      },
+    ],
+    "relationshipTypes": [
+      {
+        "slug": "IS_THE_JSON_SCHEMA_FOR",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "IS_THE_CONCEPT_FOR",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "IS_THE_PRIMARY_PROPERTY_FOR",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "IS_THE_PROPERTY_TREE_GRAPH_FOR",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "IS_THE_CORE_GRAPH_FOR",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "IS_THE_CONCEPT_GRAPH_FOR",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "IS_THE_PROPERTIES_SET_FOR",
         "uuid": "<uuid>"
       }
     ],
@@ -44,9 +90,75 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
           "slug": "IS_THE_CONCEPT_FOR"
         },
         "nodeTo": {
-          "slug": "the-superset-of-all-coffee-houses"
+          "slug": "superset-for-the-concept-of-coffee-houses"
         }
       },
+      {
+        "nodeFrom": {
+          "slug": "json-schema-for-the-concept-of-coffee-houses"
+        },
+        "relationshipType": {
+          "slug": "IS_THE_JSON_SCHEMA_FOR"
+        },
+        "nodeTo": {
+          "slug": "concept-header-for-the-concept-of-coffee-houses"
+        }
+      },
+      {
+        "nodeFrom": {
+          "slug": "primary-property-for-the-concept-of-coffee-houses"
+        },
+        "relationshipType": {
+          "slug": "IS_THE_PRIMARY_PROPERTY_FOR"
+        },
+        "nodeTo": {
+          "slug": "concept-header-for-the-concept-of-coffee-houses"
+        }
+      },
+      {
+        "nodeFrom": {
+          "slug": "property-tree-graph-for-the-concept-of-coffee-houses"
+        },
+        "relationshipType": {
+          "slug": "IS_THE_PROPERTY_TREE_GRAPH_FOR"
+        },
+        "nodeTo": {
+          "slug": "concept-header-for-the-concept-of-coffee-houses"
+        }
+      },
+      {
+        "nodeFrom": {
+          "slug": "concept-graph-for-the-concept-of-coffee-houses"
+        },
+        "relationshipType": {
+          "slug": "IS_THE_CORE_GRAPH_FOR"
+        },
+        "nodeTo": {
+          "slug": "concept-header-for-the-concept-of-coffee-houses"
+        }
+      },
+      {
+        "nodeFrom": {
+          "slug": "concept-graph-for-the-concept-of-coffee-houses"
+        },
+        "relationshipType": {
+          "slug": "IS_THE_CONCEPT_GRAPH_FOR"
+        },
+        "nodeTo": {
+          "slug": "concept-header-for-the-concept-of-coffee-houses"
+        }
+      },
+      {
+        "nodeFrom": {
+          "slug": "properties-for-the-concept-of-coffee-houses"
+        },
+        "relationshipType": {
+          "slug": "IS_THE_PROPERTIES_SET_FOR"
+        },
+        "nodeTo": {
+          "slug": "concept-header-for-the-concept-of-coffee-houses"
+        }
+      }
     ],
     "imports": [
     ]
