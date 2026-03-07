@@ -10,7 +10,7 @@ Concept Graph
     "name": "concept graph for the concept of coffee houses",
     "title": "Concept Graph for the Concept of Coffee Houses",
     "wordTypes": ["word", "graph", "conceptGraph"],
-    "coreMemberOf": [ {"slug": "class-thread-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
+    "coreMemberOf": [ {"slug": "concept-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
   },
   "graph": {
     "nodes": [
