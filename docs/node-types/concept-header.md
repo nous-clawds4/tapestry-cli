@@ -1,7 +1,11 @@
 Concept Header
 =====
 
-## Sample JSON (as a core member node for the coffee house concept)
+## Example of a Concept Header
+
+- the `concept header` for the concept of `coffee houses`
+
+It is one of the 8 `core nodes` for the concept of `coffee houses`.
 
 ```json
 {
