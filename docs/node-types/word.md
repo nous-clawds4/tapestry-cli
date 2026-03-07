@@ -26,7 +26,7 @@ The above file should validate against the JSON schema within the file below (wi
         "slug": "json-schema-for-word",
         "title": "JSON Schema for word",
         "name": "JSON Schema for Word",
-        "description": "as per the tapestry protocol",
+        "description": "",
         "wordTypes": [
             "word",
             "jsonSchema"
