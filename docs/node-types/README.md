@@ -66,8 +66,7 @@ Other canonical word types:
 | 4 | [**Graph**](./graph.md) | `word, graph` | Any set of nodes and edges |
 | 5 | [**Relationship Type**](./relationship-type.md) | `word, relationshipType` | Any type of graph database relationship |
 | 6 | [**Node Type**](./node-type.md) | `nodeType` | any type of node (eg, word, image) |
-| 7 | [**Word Type**](./word-type.md) | `word, wordType` | a type of word (e.g., coffeeHouse) |
-| 8 | [**Tapestry**](./tapestry.md) | `word, graph, tapestry` | a graph that validates against the tapestry rules of normalization; the union of many individual concept graphs |
+| 7 | [**Tapestry**](./tapestry.md) | `word, graph, tapestry` | a graph that validates against the tapestry rules of normalization; the union of many individual concept graphs |
 
 ## Conventions
 
