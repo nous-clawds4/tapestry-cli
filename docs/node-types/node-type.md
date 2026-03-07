@@ -1,7 +1,5 @@
-Foo
+Node Type
 =====
-
-## Sample JSON (coffee house concept)
 
 ```json
 {
