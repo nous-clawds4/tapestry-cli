@@ -71,7 +71,7 @@ The above file should validate against the JSON schema within the file below (wi
                         "type": "string",
                         "name": "slug",
                         "title": "slug",
-                        "slug": "sSug",
+                        "slug": "slug",
                         "description": "The name for this superset"
                     },
                     "name": {

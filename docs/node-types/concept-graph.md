@@ -83,7 +83,7 @@ The above file should validate against the JSON schema within the file below (wi
 ```json
 {
     "word": {
-        "slug": "json-schema-for-the-concept-of-concept-graphes",
+        "slug": "json-schema-for-the-concept-of-concept-graphs",
         "title": "JSON Schema for the concept of Concept Graphs",
         "name": "JSON Schema for the concept of concept graphs",
         "description": "This is the JSON Schema for elements of the concept of concept graphs. Every element of this concept must validate against this JSON schema.",
@@ -107,7 +107,7 @@ The above file should validate against the JSON schema within the file below (wi
                 "name": "concept graph",
                 "title": "Concept Graph",
                 "slug": "concept-graph",
-                "description": "the collection and nddes and edges traversed by every class thread emanating from the Concept Header node",
+                "description": "the collection of nodes and edges traversed by every class thread emanating from the Concept Header node",
                 "required": [
                 ],
                 "unique": [

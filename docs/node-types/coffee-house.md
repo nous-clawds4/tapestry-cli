@@ -37,10 +37,10 @@ The above file should validate against the JSON schema within the file below (wi
 ```json
 {
     "word": {
-        "slug": "json-schema-for-the-concept-of-foo-bar",
-        "title": "JSON Schema for the concept of Foo Bars",
-        "name": "JSON Schema for the concept of foo bars",
-        "description": "This is the JSON Schema for elements of the concept of foo bars. Every element of this concept must validate against this JSON schema.",
+        "slug": "json-schema-for-the-concept-of-coffee-houses",
+        "title": "JSON Schema for the concept of Coffee Houses",
+        "name": "JSON Schema for the concept of coffee houses",
+        "description": "This is the JSON Schema for elements of the concept of coffee houses. Every element of this concept must validate against this JSON schema.",
         "wordTypes": [
             "word",
             "jsonSchema"
