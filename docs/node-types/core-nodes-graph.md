@@ -45,10 +45,6 @@ Core Nodes Graph
       },
     ],
     "imports": [
-    ]
-  },
-  "coreNodesGraph": {
-    "imports": [
       {
         "slug": "properties-tree-graph-for-the-concept-of-coffee-houses",
         "name": "properties tree graph for the concept of coffee houses",
@@ -60,6 +56,8 @@ Core Nodes Graph
         "uuid": "<uuid>"
       }
     ]
+  },
+  "coreNodesGraph": {
   }
 }
 ```
