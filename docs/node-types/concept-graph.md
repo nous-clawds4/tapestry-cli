@@ -64,7 +64,7 @@ Concept Graph
   },
   "conceptGraph": {
     "description": "The collection of all nodes and edges traversed by the class threads of the concept of coffee houses",
-    "cypher": "MATCH (n:ConceptHeader {uuid: '<uuid_for_coffee_houses>'}) ... class thread query"
+    "cypher": "MATCH classPath = (conceptHeader)-[:IS_THE_CONCEPT_FOR]->(superset:Superset)-[:IS_A_SUPERSET_OF *0..5]->()-[:HAS_ELEMENT]->() WHERE conceptHeader.uuid = '<uuid>' RETURN classPath "
   }
 }
 ```
@@ -94,20 +94,29 @@ The above file should validate against the JSON schema within the file below (wi
         "definitions": {},
         "type": "object",
         "required": [
-            ""
+            "conceptGraph"
         ],
         "properties": {
-            "": {
+            "conceptGraph": {
                 "type": "object",
-                "name": "",
-                "title": "",
-                "slug": "",
-                "description": "",
+                "name": "concept graph",
+                "title": "Concept Graph",
+                "slug": "concept-graph",
+                "description": "the collection and nddes and edges traversed by every class thread emanating from the Concept Header node",
                 "required": [
                 ],
                 "unique": [
                 ],
                 "properties": {
+                  "description": {
+                    "type": "string",
+                    "name": "description"
+                  },
+                  "cypher": {
+                    "type": "string",
+                    "name": "cypher",
+                    "description": "The cypher command that should return the concept graph for this concept"
+                  }
                 }
             }
         }
