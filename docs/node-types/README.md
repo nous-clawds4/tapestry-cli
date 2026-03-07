@@ -17,11 +17,11 @@ We concern ourselves primarily with nodes that represent data files structured a
 
 The `word.wordTypes` array declares which sections are present. By convention, they are ordered from coarse grained to fine grained, although this convention is not strict. For example: a primary property node has `wordTypes: ["word", "property", "primaryProperty"]` because every primary property **is a** property, and every property **is a** word.
 
-## Canonical Word Types
+## Canonical Concepts
 
 Class threads and concepts are defined as per the tapestry protocol. Canonical word types are the ones that are required for the basic functioning of the concept graph.
 
-### Core Concept Word Types
+### Core Concepts
 
 Any given concept can be identified by the node at the start of a class thread: **Concept Header** node.
 
