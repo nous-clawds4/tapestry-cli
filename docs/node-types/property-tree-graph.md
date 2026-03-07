@@ -40,7 +40,9 @@ Property Tree Graph
           "uuid": "<uuid>"
         }
       },
-    ]
+    ],
+    "imports": {
+    }
   },
   "propertyTreeGraph": {}
 }
