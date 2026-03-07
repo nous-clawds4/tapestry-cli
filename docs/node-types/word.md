@@ -26,9 +26,9 @@ The above file should validate against the JSON schema within the file below (wi
 ```json
 {
     "word": {
-        "slug": "json-schema-for-word",
-        "title": "JSON Schema for word",
-        "name": "JSON Schema for Word",
+        "slug": "json-schema-for-the-concept-of-words",
+        "title": "JSON Schema for the Concept of Words",
+        "name": "json schema for the concept of words",
         "description": "",
         "wordTypes": [
             "word",
