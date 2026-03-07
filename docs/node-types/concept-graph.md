@@ -97,6 +97,19 @@ The above file should validate against the JSON schema within the file below (wi
             ""
         ],
         "properties": {
+            "": {
+                "type": "object",
+                "name": "",
+                "title": "",
+                "slug": "",
+                "description": "",
+                "required": [
+                ],
+                "unique": [
+                ],
+                "properties": {
+                }
+            }
         }
     }
 }
