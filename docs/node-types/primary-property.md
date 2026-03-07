@@ -35,6 +35,55 @@ The **primary property** is the root container property for a concept. When you 
 }
 ```
 
+## JSON Schema node
+
+This is the JSON Schema node for the concept of `coffee houses`.
+
+The above file should validate against the JSON schema within the file below (within `jsonSchema`).
+
+```json
+{
+    "word": {
+        "slug": "json-schema-for-",
+        "title": "JSON Schema for",
+        "name": "JSON Schema for",
+        "description": "",
+        "wordTypes": [
+            "word",
+            "jsonSchema"
+        ],
+    },
+    "jsonSchema": {
+        "name": "",
+        "title": "",
+        "$schema": "http://json-schema.org/schema",
+        "definitions": {},
+        "type": "object",
+        "required": [
+            "primaryProperty"
+        ],
+        "properties": {
+            "": {
+                "type": "object",
+                "name": "",
+                "title": "",
+                "slug": "",
+                "alias": "",
+                "description": "",
+                "required": [
+
+                ],
+                "unique": [
+
+                ],
+                "properties": {
+                }
+            }
+        }
+    }
+}
+```
+
 ## Design Decisions
 
 ### 1. Three-Layer Structure: `word` → `primaryProperty` → `property`
