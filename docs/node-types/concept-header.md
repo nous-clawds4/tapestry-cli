@@ -65,11 +65,11 @@ The above file should validate against the JSON schema within the file below (wi
         "name": "concept header",
         "title": "Concept Header",
         "$schema": "http://json-schema.org/schema",
-        "definitions": {},
         "type": "object",
         "required": [
             "conceptHeader"
         ],
+        "definitions": {},
         "properties": {
             "conceptHeader": {
                 "type": "object",
