@@ -11,7 +11,7 @@ Word
     "slug": "json-data-type--object",
     "name": "JSON data type: object",
     "title": "JSON Data Type: Object",
-    "description": "the json schema for the concept of coffee houses",
+    "description": "the json data type: object",
     "wordTypes": ["word", "jsonDataType"]
   }
 }
