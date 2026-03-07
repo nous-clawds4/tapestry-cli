@@ -11,7 +11,7 @@ Foo Bar
     "title": "",
     "wordTypes": ["word", ""]
   },
-  "": {
+  "fooBar": {
   }
 }
 ```
@@ -41,10 +41,10 @@ The above file should validate against the JSON schema within the file below (wi
         "definitions": {},
         "type": "object",
         "required": [
-            ""
+            "fooBar"
         ],
         "properties": {
-            "": {
+            "fooBar": {
                 "type": "object",
                 "name": "",
                 "title": "",
