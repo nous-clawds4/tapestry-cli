@@ -14,6 +14,7 @@ Set
     "wordTypes": ["word", "set"]
   },
   "set": {
+    "slug": "london-coffee-houses",
     "name": "London coffee houses"
   }
 }
@@ -55,12 +56,19 @@ The above file should validate against the JSON schema within the file below (wi
                 "alias": "set",
                 "description": "data about this set",
                 "required": [
-
+                    "slug"
                 ],
                 "unique": [
-
+                    "slug"
                 ],
                 "properties": {
+                    "slug": {
+                        "type": "string",
+                        "name": "slug",
+                        "title": "Slug",
+                        "slug": "slug",
+                        "description": "The slug for this set"
+                    },
                     "name": {
                         "type": "string",
                         "name": "name",
