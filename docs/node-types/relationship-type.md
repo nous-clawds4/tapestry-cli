@@ -1,7 +1,7 @@
 Relationship Type
 =====
 
-## Sample JSON (coffee house concept)
+## Sample JSON
 
 ```json
 {
