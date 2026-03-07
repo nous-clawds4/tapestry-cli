@@ -35,7 +35,7 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
         "uuid": "<uuid>"
       },
       {
-        "slug": "primary-properties-for-the-concept-of-coffee-houses",
+        "slug": "primary-property-for-the-concept-of-coffee-houses",
         "uuid": "<uuid>"
       },
       {
@@ -128,7 +128,7 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
       },
       {
         "nodeFrom": {
-          "slug": "concept-graph-for-the-concept-of-coffee-houses"
+          "slug": "core-nodes-graph-for-the-concept-of-coffee-houses"
         },
         "relationshipType": {
           "slug": "IS_THE_CORE_GRAPH_FOR"
