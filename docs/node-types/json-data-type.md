@@ -8,8 +8,8 @@ JSON Data Type
 ```json
 {
   "word": {
-    "slug": "json-data-type",
-    "name": "JSON data type",
+    "slug": "json-data-type--object",
+    "name": "JSON data type: object",
     "description": "the json schema for the concept of coffee houses",
     "wordTypes": ["word", "jsonDataType"]
   },
