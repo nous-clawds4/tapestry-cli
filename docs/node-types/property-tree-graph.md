@@ -41,8 +41,8 @@ Property Tree Graph
         }
       },
     ],
-    "imports": {
-    }
+    "imports": [
+    ]
   },
   "propertyTreeGraph": {}
 }
