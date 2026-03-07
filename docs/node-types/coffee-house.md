@@ -58,11 +58,10 @@ The above file should validate against the JSON schema within the file below (wi
         "properties": {
             "coffeeHouse": {
                 "type": "object",
-                "name": "",
-                "title": "",
-                "slug": "",
-                "alias": "",
-                "description": "",
+                "name": "coffee house",
+                "title": "Coffee House",
+                "slug": "coffee-house",
+                "description": "data about this coffee house",
                 "required": [
                   "slug"
                 ],
@@ -75,7 +74,7 @@ The above file should validate against the JSON schema within the file below (wi
                     "name": "slug",
                     "slug": "slug",
                     "title": "Slug",
-                    "comments": "The tapestry protocol requires that the slug of a word must be unique within any given concept graph. By convention, this may be accomplished via concatenation of the slug of the principal parent concept (which must be unique within any given concept graph) and the parentConcept.slug of the word, e.g. coffeeHouse.slug, which must be unique within that concept."
+                    "description": "the slug for the coffee house"
                   },
                   "name": {
                     "type": "string",
@@ -89,7 +88,7 @@ The above file should validate against the JSON schema within the file below (wi
                     "name": "address",
                     "slug": "address",
                     "title": "Address",
-                    "description": "The name of the coffee house.",
+                    "description": "The address of the coffee house.",
                     "properties": {
                     }
                   }
