@@ -43,6 +43,8 @@ Core Nodes Graph
           "slug": "the-superset-of-all-coffee-houses"
         }
       },
+    ],
+    "imports": [
     ]
   },
   "coreNodesGraph": {
