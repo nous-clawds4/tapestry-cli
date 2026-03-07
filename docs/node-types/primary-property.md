@@ -63,10 +63,10 @@ The above file should validate against the JSON schema within the file below (wi
             "primaryProperty"
         ],
         "properties": {
-            "": {
+            "primaryProperty": {
                 "type": "object",
-                "name": "",
-                "title": "",
+                "name": "primary property",
+                "title": "Primary Property",
                 "slug": "",
                 "alias": "",
                 "description": "",
