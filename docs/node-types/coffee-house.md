@@ -29,7 +29,7 @@ Coffee House
 
 ## JSON Schema node
 
-This is the JSON Schema node for the concept of `foo bars`.
+This is the JSON Schema node for the concept of `words`.
 
 The above file should validate against the JSON schema within the file below (within `jsonSchema`).
 
@@ -46,16 +46,16 @@ The above file should validate against the JSON schema within the file below (wi
         ],
     },
     "jsonSchema": {
-        "name": "",
-        "title": "",
+        "name": "word",
+        "title": "Word",
         "$schema": "http://json-schema.org/schema",
         "definitions": {},
         "type": "object",
         "required": [
-            "fooBar"
+            "word"
         ],
         "properties": {
-            "fooBar": {
+            "word": {
                 "type": "object",
                 "name": "",
                 "title": "",
@@ -63,12 +63,16 @@ The above file should validate against the JSON schema within the file below (wi
                 "alias": "",
                 "description": "",
                 "required": [
-
+                  "slug"
                 ],
                 "unique": [
-
+                  "slug"
                 ],
                 "properties": {
+                  "slug": {
+                    "type": "string",
+                    "comments": "The tapestry protocol requires that the slug of a word must be unique within any given concept graph. By convention, this may be accomplished via concatenation of the slug of the principal parent concept (which must be unique within any given concept graph) and the parentConcept.slug of the word, e.g. coffeeHouse.slug, which must be unique within that concept.",
+                  }
                 }
             }
         }
