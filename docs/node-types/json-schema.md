@@ -14,6 +14,7 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
   "word": {
     "slug": "json-schema-for-the-concept-of-coffee-houses",
     "name": "JSON schema for the concept of coffee houses",
+    "title": "JSON Schema for the Concept of Coffee Houses",
     "description": "the json schema for the concept of coffee houses",
     "wordTypes": ["word", "jsonSchema"],
     "coreMemberOf": [ {"slug": "concept-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
