@@ -164,6 +164,14 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
     ]
   },
   "coreNodesGraph": {
+    "superset": "<uuid>",
+    "jsonSchema": "<uuid>",
+    "primaryProperty": "<uuid>",
+    "coreNodesGraph": "<uuid>",
+    "propertyTreeGraph": "<uuid>",
+    "conceptGraph": "<uuid>",
+    "properties": "<uuid>",
+    "conceptHeader": "<uuid>",
   }
 }
 ```
