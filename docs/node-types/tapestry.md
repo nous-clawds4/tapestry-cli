@@ -1,7 +1,7 @@
 Tapestry
 =====
 
-## Sample JSON (coffee house concept)
+## Sample JSON
 
 ```json
 {
@@ -9,7 +9,7 @@ Tapestry
     "slug": "",
     "name": "",
     "title": "",
-    "wordTypes": ["word", ""]
+    "wordTypes": ["word", "set", "tapestry"]
   },
   "": {
   }
