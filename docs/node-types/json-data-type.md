@@ -10,7 +10,7 @@ JSON Data Type
   "word": {
     "slug": "json-data-type--object",
     "name": "JSON data type: object",
-    "description": "the json schema for the concept of coffee houses",
+    "description": "the json data type: object",
     "wordTypes": ["word", "jsonDataType"]
   },
   "jsonDataType": {
