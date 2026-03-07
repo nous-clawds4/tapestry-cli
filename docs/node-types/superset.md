@@ -61,17 +61,31 @@ The above file should validate against the JSON schema within the file below (wi
                 "alias": "superset",
                 "description": "data about this superset",
                 "required": [
-
+                    "slug"
                 ],
                 "unique": [
-
+                    "slug"
                 ],
                 "properties": {
+                    "slug": {
+                        "type": "string",
+                        "name": "slug",
+                        "title": "slug",
+                        "slug": "sSug",
+                        "description": "The name for this superset"
+                    },
                     "name": {
                         "type": "string",
                         "name": "name",
                         "title": "Name",
                         "slug": "name",
+                        "description": "The name for this superset"
+                    },
+                    "title": {
+                        "type": "string",
+                        "name": "title",
+                        "title": "Title",
+                        "slug": "title",
                         "description": "The name for this superset"
                     },
                     "description": {
