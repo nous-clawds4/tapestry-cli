@@ -16,7 +16,8 @@ JSON Data Type
   "jsonDataType": {
     "name": "object",
     "title": "Object",
-    "description": "the data type of a property that is the parent to one or more child properties"
+    "description": "Objects are the mapping type in JSON. They map keys to values. In JSON, the keys must always be strings. Each of these pairs is conventionally referred to as a property.",
+    "url": "https://json-schema.org/understanding-json-schema/reference/object"
   }
 }
 ```
