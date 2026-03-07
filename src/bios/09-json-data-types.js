@@ -57,7 +57,7 @@ async function main() {
   for (const dt of JSON_DATA_TYPES) {
     await createItem({
       name: dt.name,
-      parentUuid: result.header.aTag,
+      concept: 'JSON data type',
       description: dt.description,
     });
   }
