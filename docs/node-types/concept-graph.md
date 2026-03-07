@@ -56,8 +56,8 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
     ],
     "imports": [
       {
-        "slug": "properties-tree-graph-for-the-concept-of-coffee-houses",
-        "name": "properties tree graph for the concept of coffee houses",
+        "slug": "property-tree-graph-for-the-concept-of-coffee-houses",
+        "name": "property tree graph for the concept of coffee houses",
         "uuid": "<uuid>"
       },
       {
