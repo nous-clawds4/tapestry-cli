@@ -1,7 +1,11 @@
 Foo Bar
 =====
 
-## Sample JSON
+## Example of a Foo Bar
+
+- the `foo bar` for the concept of `coffee houses`
+
+It is one of the 8 `core nodes` for the concept of `coffee houses`.
 
 ```json
 {
