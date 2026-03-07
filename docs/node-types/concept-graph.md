@@ -44,13 +44,13 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
     "relationships": [
       {
         "nodeFrom": {
-          "slug": ""
+          "slug": "concept-header-for-the-concept-of-coffee-houses"
         },
         "relationshipType": {
           "slug": "IS_THE_CONCEPT_FOR"
         },
         "nodeTo": {
-          "slug": ""
+          "slug": "superset-for-the-concept-of-coffee-houses"
         }
       },
     ],
