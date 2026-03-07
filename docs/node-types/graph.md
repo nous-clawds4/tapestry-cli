@@ -9,10 +9,22 @@ Graph
     "slug": "",
     "name": "",
     "title": "",
-    "wordTypes": ["word", ""]
+    "wordTypes": ["word", "graph"]
   },
-  "": {
-  }
+  "graph": {
+    "nodes": [
+      {
+        "slug": "",
+        "uuid": "<uuid>"
+      }
+    ],
+    "relationshipTypes": [
+    ],
+    "relationships": [
+    ],
+    "imports": [
+    ]
+  },
 }
 ```
 
