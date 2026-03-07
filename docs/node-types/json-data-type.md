@@ -23,7 +23,7 @@ JSON Data Type
 ```
 ## JSON Schema node
 
-This is the JSON Schema node for the concept of `foo bars`.
+This is the JSON Schema node for the concept of `json data types`.
 
 The above file should validate against the JSON schema within the file below (within `jsonSchema`).
 
