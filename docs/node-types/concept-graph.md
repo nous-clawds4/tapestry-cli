@@ -76,7 +76,7 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
 
 ## JSON Schema node
 
-This is the JSON Schema node for the Concept Header concept.
+This is the JSON Schema node for the `Concept Graph` concept.
 
 The above file should validate against the JSON schema within the file below (within `jsonSchema`).
 
