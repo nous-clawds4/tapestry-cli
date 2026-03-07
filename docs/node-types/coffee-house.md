@@ -30,7 +30,7 @@ Coffee House
 
 ## JSON Schema node
 
-This is the JSON Schema node for the concept of `words`.
+This is the JSON Schema node for the concept of `coffee houses`.
 
 The above file should validate against the JSON schema within the file below (within `jsonSchema`).
 
@@ -47,16 +47,16 @@ The above file should validate against the JSON schema within the file below (wi
         ],
     },
     "jsonSchema": {
-        "name": "word",
-        "title": "Word",
+        "name": "coffee house",
+        "title": "Coffee House",
         "$schema": "http://json-schema.org/schema",
         "definitions": {},
         "type": "object",
         "required": [
-            "word"
+            "coffeeHouse"
         ],
         "properties": {
-            "word": {
+            "coffeeHouse": {
                 "type": "object",
                 "name": "",
                 "title": "",
