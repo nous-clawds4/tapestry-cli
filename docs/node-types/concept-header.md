@@ -9,7 +9,8 @@ Concept Header
     "slug": "concept-header-for-the-concept-of-coffee-houses",
     "name": "concept header for the concept of coffee houses",
     "title": "Concept Header for the Concept of Coffee Houses",
-    "wordTypes": ["word", "conceptHeader"]
+    "wordTypes": ["word", "conceptHeader"],
+    "coreMemberOf": [ {"slug": "concept-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
   },
   "conceptHeader": {
     "description": "A coffee house is a place to get coffee!",
