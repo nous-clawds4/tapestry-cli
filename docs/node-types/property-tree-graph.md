@@ -44,6 +44,8 @@ Property Tree Graph
     "imports": [
     ]
   },
-  "propertyTreeGraph": {}
+  "propertyTreeGraph": {
+    "description": "the collection of the JSON schema node, all property nodes and all of their connections for the concept of coffee houses "
+  }
 }
 ```
