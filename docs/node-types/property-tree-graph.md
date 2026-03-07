@@ -10,7 +10,7 @@ Property Tree Graph
     "name": "property tree graph for the concept of coffee houses",
     "title": "Property Tree Graph for the Concept of Coffee Houses",
     "wordTypes": ["word", "graph", "propertyTreeGraph"],
-    "coreMemberOf": [ {"slug": "class-thread-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
+    "coreMemberOf": [ {"slug": "concept-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
   },
   "graph": {
     "nodes": [
