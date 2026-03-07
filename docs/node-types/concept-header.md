@@ -1,7 +1,9 @@
 Concept Header
 =====
 
-## Example of a Concept Header
+The `Concept Header` node is the origin of the class threads that define a concept.
+
+## Example of a `Concept Header`
 
 - the `concept header` for the concept of `coffee houses`
 
