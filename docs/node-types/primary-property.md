@@ -1,8 +1,13 @@
-# Primary Property Node
+Primary Property
+=====
 
 The **primary property** is the root container property for a concept. When you describe an element (e.g., a specific coffee house), all its data lives under the primary property key in the JSON. It is both a **property** and a special role (**primaryProperty**), so its JSON has three top-level sections.
 
-## Sample JSON (as a core member node for the coffee house concept)
+## Example of a Primary Property
+
+- the `primary property` for the concept of `coffee houses`
+
+It is one of the 8 `core nodes` for the concept of `coffee houses`.
 
 ```json
 {
