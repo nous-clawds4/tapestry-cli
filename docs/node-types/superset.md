@@ -6,9 +6,9 @@ Superset
 ```json
 {
   "word": {
-    "slug": "the superset-of-all-coffee-houses",
-    "name": "the superset of all coffee houses",
-    "title": "The Superset of All Coffee Houses",
+    "slug": "superset-for-the-concept-of-coffee-houses",
+    "name": "superset for the concept of coffee houses",
+    "title": "Superset for the Concept of Coffee Houses",
     "wordTypes": ["word", "superset"],
     "coreMemberOf": [ {"slug": "concept-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
   },
