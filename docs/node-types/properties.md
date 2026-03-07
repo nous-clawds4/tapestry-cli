@@ -1,7 +1,7 @@
 Properties
 =====
 
-## Example of a Concept Graph
+## Example of a `Properties` node
 
 - the `Properties` node for the concept of `coffee houses`
 
