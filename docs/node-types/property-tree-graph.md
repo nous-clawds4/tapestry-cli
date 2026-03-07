@@ -1,7 +1,7 @@
 Property Tree Graph
 =====
 
-## Sample JSON (coffee house concept)
+## Sample JSON (as a core member node for the coffee house concept)
 
 ```json
 {
