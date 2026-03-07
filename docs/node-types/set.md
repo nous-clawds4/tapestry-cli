@@ -36,7 +36,7 @@ The above file should validate against the JSON schema within the file below (wi
         "wordTypes": [
             "word",
             "jsonSchema"
-        ],
+        ]
     },
     "jsonSchema": {
         "name": "set",

@@ -41,7 +41,7 @@ The above file should validate against the JSON schema within the file below (wi
         "wordTypes": [
             "word",
             "jsonSchema"
-        ],
+        ]
     },
     "jsonSchema": {
         "name": "superset",
@@ -70,9 +70,9 @@ The above file should validate against the JSON schema within the file below (wi
                     "slug": {
                         "type": "string",
                         "name": "slug",
-                        "title": "slug",
+                        "title": "Slug",
                         "slug": "slug",
-                        "description": "The name for this superset"
+                        "description": "The slug for this superset"
                     },
                     "name": {
                         "type": "string",
@@ -86,7 +86,7 @@ The above file should validate against the JSON schema within the file below (wi
                         "name": "title",
                         "title": "Title",
                         "slug": "title",
-                        "description": "The name for this superset"
+                        "description": "The title for this superset"
                     },
                     "description": {
                         "type": "string",

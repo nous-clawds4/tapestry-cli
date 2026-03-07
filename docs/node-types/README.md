@@ -10,7 +10,7 @@ Every node in the concept graph represents some piece of information. That piece
 
 ## The Word System
 
-We concern ourselves primarily with nodes that represent data files structered as JSON. Every such node is called a **word**. Every word is categorized into one or more **word types**, as presened below. Each word's JSON follows a layered structure where top-level keys correspond to the type(s) of the word:
+We concern ourselves primarily with nodes that represent data files structured as JSON. Every such node is called a **word**. Every word is categorized into one or more **word types**, as presented below. Each word's JSON follows a layered structure where top-level keys correspond to the type(s) of the word:
 
 - **`word`** — universal metadata present on every node (identity, slug, description, type list)
 - **Type-specific sections** — one key per word type the node belongs to (e.g., `property`, `primaryProperty`, `classThreadHeader`)
@@ -34,7 +34,7 @@ A fully-formed concept contains the **Concept Header** node plus 7 more for a to
 | 3 | [**JSON Schema**](./json-schema.md) | `word, jsonSchema` | The JSON Schema against which each element must validate |
 | 4 | [**Primary Property**](./primary-property.md) | `word, property, primaryProperty` | The root property for the JSON Schema |
 | 5 | [**Properties**](./properties.md) | `word, set, properties` | The set of property nodes for this concept |
-| 6 | [**Property Tree Graph**](./property-tree-graph.md) | `word, graph, propertyTreeGraph` | The graph that containst the JSON Schema, the Primary Property, and all downstream Property nodes |
+| 6 | [**Property Tree Graph**](./property-tree-graph.md) | `word, graph, propertyTreeGraph` | The graph that contains the JSON Schema, the Primary Property, and all downstream Property nodes |
 | 7 | [**Core Nodes Graph**](./core-nodes-graph.md) | `word, graph, coreNodesGraph` | A graph that contains all core nodes and their interconnections. |
 | 8 | [**Concept Graph**](./concept-graph.md) | `word, graph, conceptGraph` | The graph that contains the concept header, the Superset, all Set nodes, and all Elements of the concept. It also imports the core nodes graph and property tree graph |
 
@@ -48,7 +48,7 @@ In addition, any given concept is associated with these additional word types:
 | 2 | [**Set**](./set.md) | `word, set` | A particular list/set of coffee houses |
 | 3 | [**Element**](./element.md) | `word, coffeeHouse` | An individual coffee house |
 
-Technically speaking, the formal definition of a concept cannot be stated without reference to the class thread rule: it is a *graph*, a *collection of all the nodes and edges traversed by every class thread that emanates from a single node* [1]. That single node is referred to as the *concept header* node (also know as the *class thread header node*. And the collection of nodes + edges is referred to as the *concept graph*.
+Technically speaking, the formal definition of a concept cannot be stated without reference to the class thread rule: it is a *graph*, a *collection of all the nodes and edges traversed by every class thread that emanates from a single node* [1]. That single node is referred to as the *concept header* node (also known as the *class thread header node*). And the collection of nodes + edges is referred to as the *concept graph*.
 
 The word *concept* by itself can have 3 different meanings, depending on the context:
 1. the **Concept Header** node
@@ -79,4 +79,4 @@ Other canonical word types:
 
 ## Notes
 
-[1] Keep in mind that the HAS_ELEMENT relationship, also known as the "class thread termination" relationship, can be *implicitly* inferred by two things: 1) the presence of a class thread initiation node and 2) a z-tag with the uuid of the source of a class thread initiation relationship. A node that is the source of a class thread initiation node but lacks elements (whether definied explicitly or implicitly) shall be referred to as a *proto concept*. Conversely: a List Header is any node that has List Items. Therefore, and List Header node that is the nodeFrom of a class thread initiation node meets the definition of a concept and should be labelled a **Concept Header** node.
+[1] Keep in mind that the HAS_ELEMENT relationship, also known as the "class thread termination" relationship, can be *implicitly* inferred by two things: 1) the presence of a class thread initiation node and 2) a z-tag with the uuid of the source of a class thread initiation relationship. A node that is the source of a class thread initiation node but lacks elements (whether defined explicitly or implicitly) shall be referred to as a *proto concept*. Conversely: a List Header is any node that has List Items. Therefore, a List Header node that is the nodeFrom of a class thread initiation node meets the definition of a concept and should be labelled a **Concept Header** node.

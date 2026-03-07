@@ -1,7 +1,7 @@
 JSON Schema
 =====
 
-Any given `element` (e.g., a specific coffee house) of a `concept` (e.g., a specific coffee house) must validate against the JSON schema of that concept.
+Any given `element` (e.g., a specific coffee house) of a `concept` (e.g., the concept of coffee houses) must validate against the JSON schema of that concept.
 
 ## Example of a `JSON Schema`
 

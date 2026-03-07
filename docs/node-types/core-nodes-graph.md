@@ -39,7 +39,7 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
         "uuid": "<uuid>"
       },
       {
-        "slug": "properties-for-the-concept-of-coffee-houses",
+        "slug": "the-set-of-properties-for-the-concept-of-coffee-houses",
         "uuid": "<uuid>"
       },
       {
@@ -49,7 +49,7 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
       {
         "slug": "superset-for-the-concept-of-coffee-houses",
         "uuid": "<uuid>"
-      },
+      }
     ],
     "relationshipTypes": [
       {
@@ -150,7 +150,7 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
       },
       {
         "nodeFrom": {
-          "slug": "properties-for-the-concept-of-coffee-houses"
+          "slug": "the-set-of-properties-for-the-concept-of-coffee-houses"
         },
         "relationshipType": {
           "slug": "IS_THE_PROPERTIES_SET_FOR"

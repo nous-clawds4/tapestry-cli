@@ -39,7 +39,7 @@ Property Tree Graph
           "slug": "",
           "uuid": "<uuid>"
         }
-      },
+      }
     ],
     "imports": [
     ]

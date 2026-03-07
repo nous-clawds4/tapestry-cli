@@ -18,7 +18,7 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
   },
   "set": {
     "slug": "properties-for-the-concept-of-coffee-houses",
-    "name": "properties for the concept of coffee houses",
+    "name": "properties for the concept of coffee houses"
   },
   "properties": {
   }
@@ -41,7 +41,7 @@ The above file should validate against the JSON schema within the file below (wi
         "wordTypes": [
             "word",
             "jsonSchema"
-        ],
+        ]
     },
     "jsonSchema": {
         "name": "",
