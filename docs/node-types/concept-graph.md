@@ -96,7 +96,6 @@ The above file should validate against the JSON schema within the file below (wi
         "name": "",
         "title": "",
         "$schema": "http://json-schema.org/schema",
-        "definitions": {},
         "type": "object",
         "required": [
             "conceptGraph"
