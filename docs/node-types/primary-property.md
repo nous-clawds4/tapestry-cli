@@ -37,16 +37,16 @@ The **primary property** is the root container property for a concept. When you 
 
 ## JSON Schema node
 
-This is the JSON Schema node for the concept of `coffee houses`.
+This is the JSON Schema node for the concept of `primary properties`.
 
 The above file should validate against the JSON schema within the file below (within `jsonSchema`).
 
 ```json
 {
     "word": {
-        "slug": "json-schema-for-",
-        "title": "JSON Schema for",
-        "name": "JSON Schema for",
+        "slug": "json-schema-for-the-concept-of-primary-properties",
+        "title": "JSON Schema for the Concept of Primary Properties",
+        "name": "JSON Schema for the concept of primary properties",
         "description": "",
         "wordTypes": [
             "word",
