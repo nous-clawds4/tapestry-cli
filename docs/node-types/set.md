@@ -1,7 +1,9 @@
 Set
 =====
 
-## Sample JSON (coffee house concept)
+## Example of a `Set`
+
+- `London coffee houses` is an example of a `set`
 
 ```json
 {
