@@ -36,7 +36,7 @@ The above file should validate against the JSON schema within the file below (wi
     },
     "jsonSchema": {
         "name": "word",
-        "title": "",
+        "title": "Word",
         "$schema": "http://json-schema.org/schema",
         "definitions": {},
         "type": "object",
