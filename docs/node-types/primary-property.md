@@ -2,7 +2,7 @@
 
 The **primary property** is the root container property for a concept. When you describe an element (e.g., a specific coffee house), all its data lives under the primary property key in the JSON. It is both a **property** and a special role (**primaryProperty**), so its JSON has three top-level sections.
 
-## Sample JSON (coffee house concept)
+## Sample JSON (as a core member node for the coffee house concept)
 
 ```json
 {
