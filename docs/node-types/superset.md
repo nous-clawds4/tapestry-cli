@@ -1,9 +1,9 @@
 Superset
 =====
 
-## Example of a Concept Graph
+## Example of a Superset
 
-- the `concept graph` for the concept of `coffee houses`
+- the `superset` for the concept of `coffee houses`
 
 It is one of the 8 `core nodes` for the concept of `coffee houses`.
 
