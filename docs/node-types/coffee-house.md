@@ -14,6 +14,7 @@ Coffee House
     "wordTypes": ["word", "coffeeHouse"]
   },
   "coffeeHouse": {
+    "slug": "metropolis-coffee-company",
     "name": "Metropolis Coffee Company",
     "address": {
       "street": "123 Main Street",
