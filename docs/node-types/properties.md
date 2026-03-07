@@ -10,13 +10,15 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
 ```json
 {
   "word": {
-    "slug": "properties-for-the-concept-of-coffee-houses",
-    "name": "properties for the concept of coffee houses",
-    "title": "Properties for the Concept of Coffee Houses",
+    "slug": "the-set-of-properties-for-the-concept-of-coffee-houses",
+    "name": "the set of properties for the concept of coffee houses",
+    "title": "The Set of Properties for the Concept of Coffee Houses",
     "wordTypes": ["word", "set", "properties"],
     "coreMemberOf": [ {"slug": "concept-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
   },
   "set": {
+    "slug": "properties-for-the-concept-of-coffee-houses",
+    "name": "properties for the concept of coffee houses",
   },
   "properties": {
   }
@@ -48,15 +50,14 @@ The above file should validate against the JSON schema within the file below (wi
         "definitions": {},
         "type": "object",
         "required": [
-            ""
+            "properties"
         ],
         "properties": {
-            "": {
+            "properties": {
                 "type": "object",
-                "name": "",
-                "title": "",
-                "slug": "",
-                "alias": "",
+                "name": "properties",
+                "title": "Properties",
+                "slug": "properties",
                 "description": "",
                 "required": [
 
