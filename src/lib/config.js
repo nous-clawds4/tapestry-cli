@@ -57,12 +57,12 @@ const DEFAULTS = {
   // ── Graph Type UUIDs ──
   // These are the a-tags for the graph types that every concept gets.
   // (Will be populated once BIOS scripts create them, or fetched from existing graph.)
-  // 'uuid.graphType.classThreads':  '', // TBD
+  // 'uuid.graphType.conceptGraph':  '', // TBD
   // 'uuid.graphType.propertyTree':  '', // TBD
   // 'uuid.graphType.coreNodes':     '', // TBD
 
   // ── Relationship Types ──
-  // The relationship types used to wire graph nodes to ClassThreadHeaders.
+  // The relationship types used to wire graph nodes to Concept Headers.
   // These are the Neo4j relationship type strings, not UUIDs.
   'rel.classThreadInitiation':   'IS_THE_CONCEPT_FOR',
   'rel.classThreadPropagation':  'IS_A_SUPERSET_OF',
@@ -73,9 +73,11 @@ const DEFAULTS = {
   'rel.import':                  'IMPORT',
   'rel.supercedes':              'SUPERCEDES',
   'rel.providedTemplateFor':     'PROVIDED_THE_TEMPLATE_FOR',
-  'rel.classThreadsGraphFor':    'IS_THE_CLASS_THREADS_GRAPH_FOR',
+  'rel.conceptGraphFor':         'IS_THE_CONCEPT_GRAPH_FOR',
   'rel.propertyTreeGraphFor':    'IS_THE_PROPERTY_TREE_GRAPH_FOR',
   'rel.coreGraphFor':            'IS_THE_CORE_GRAPH_FOR',
+  'rel.primaryPropertyFor':      'IS_THE_PRIMARY_PROPERTY_FOR',
+  'rel.propertiesSetFor':        'IS_THE_PROPERTIES_SET_FOR',
 
   // ── Relays ──
   'relays.publish': [

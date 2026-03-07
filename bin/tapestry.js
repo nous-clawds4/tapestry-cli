@@ -19,6 +19,7 @@ import { eventCommand } from '../src/commands/event.js';
 import { configCommand } from '../src/commands/config.js';
 import { auditCommand } from '../src/commands/audit.js';
 import { propertyCommand } from '../src/commands/property.js';
+import { migrateCommand } from '../src/commands/migrate.js';
 
 // Load .env from project root
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -55,5 +56,6 @@ eventCommand(program);
 configCommand(program);
 auditCommand(program);
 propertyCommand(program);
+migrateCommand(program);
 
 program.parse();

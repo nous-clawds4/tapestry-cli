@@ -28,7 +28,8 @@ export function conceptCommand(program) {
     .description('Create a new concept with full skeleton (header, superset, schema, 3 graphs, wiring)')
     .option('--plural <name>', 'Plural form of the concept name')
     .option('--description <text>', 'Description of the concept')
-    .option('--slug <slug>', 'Explicit camelCase slug (default: derived from name)')
+    .option('--slug <slug>', 'Override kebab-case slug (default: derived from name)')
+    .option('--key <key>', 'Override camelCase key (default: derived from name)')
     .option('--d-tag <id>', 'Custom d-tag for the ListHeader (default: random 8-char hex)')
     .option('--publish', 'Also publish to remote relays')
     .option('--personal', 'Sign with personal nsec from 1Password instead of Tapestry Assistant')
@@ -40,6 +41,7 @@ export function conceptCommand(program) {
           plural: opts.plural,
           description: opts.description,
           slug: opts.slug,
+          key: opts.key,
           dTag: opts.dTag,
           personal: opts.personal,
           skipImport: opts.import === false,

@@ -10,7 +10,7 @@
  * (Rule 9): the one node that is an element of its own Superset.
  * 
  * What createConcept() creates (full skeleton):
- *   1. "node type" ListHeader / ClassThreadHeader (kind 39998)
+ *   1. "node type" ListHeader / ConceptHeader (kind 39998)
  *   2. "the superset of all node types" Superset (kind 39999)
  *   3. "JSON schema for node type" JSONSchema (kind 39999)
  *   4. Core Nodes Graph (kind 39999)

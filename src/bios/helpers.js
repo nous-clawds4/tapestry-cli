@@ -5,8 +5,8 @@
  * BIOS scripts use these for consistency and readability.
  *
  * createConcept() delegates to src/lib/concept.js — creates the full skeleton:
- *   ListHeader (dual-labeled ClassThreadHeader), Superset, JSON Schema,
- *   3 graph nodes (core, class threads, property tree), 5 relationship events,
+ *   ListHeader (labeled ConceptHeader), Superset, JSON Schema,
+ *   3 graph nodes (core nodes, concept graph, property tree), 5 relationship events,
  *   and JSON tags on all 6 primary nodes.
  *
  * createItem() creates a single kind 39999 ListItem (element of a concept).
@@ -76,7 +76,7 @@ export function randomDTag() {
  * @param {string} opts.description - Description
  * @param {string} [opts.dTag] - Custom d-tag (default: random)
  * @param {string} [opts.slug] - Explicit slug
- * @returns {object} { header, superset, schema, coreNodesGraph, classThreadsGraph, propertyTreeGraph, relationships }
+ * @returns {object} { header, superset, schema, coreNodesGraph, conceptGraph, propertyTreeGraph, relationships }
  *   Each has { event, aTag }.
  */
 export async function createConcept(opts) {

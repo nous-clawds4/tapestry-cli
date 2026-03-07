@@ -42,7 +42,8 @@ const KNOWN_REL_TYPES = [
   'IS_THE_CONCEPT_FOR', 'IS_A_SUPERSET_OF', 'HAS_ELEMENT',
   'IS_A_PROPERTY_OF', 'IS_THE_JSON_SCHEMA_FOR', 'ENUMERATES',
   'PROVIDED_THE_TEMPLATE_FOR', 'IMPORT', 'SUPERCEDES',
-  'IS_THE_CLASS_THREADS_GRAPH_FOR', 'IS_THE_PROPERTY_TREE_GRAPH_FOR', 'IS_THE_CORE_GRAPH_FOR',
+  'IS_THE_CONCEPT_GRAPH_FOR', 'IS_THE_PROPERTY_TREE_GRAPH_FOR', 'IS_THE_CORE_GRAPH_FOR',
+  'IS_THE_PRIMARY_PROPERTY_FOR', 'IS_THE_PROPERTIES_SET_FOR',
 ];
 
 /**
@@ -235,8 +236,8 @@ export async function importToNeo4j(events, opts = {}) {
       if (pluralMatch) {
         const plural = pluralMatch[1];
         // Find a ListHeader by this author whose names tag plural matches
-        // Wire IS_THE_CONCEPT_FOR and add ClassThreadHeader label.
-        // A node becomes a ClassThreadHeader when it has an IS_THE_CONCEPT_FOR
+        // Wire IS_THE_CONCEPT_FOR and add ConceptHeader label.
+        // A node becomes a ConceptHeader when it has an IS_THE_CONCEPT_FOR
         // relationship to a Superset — that's the formal criterion.
         statements.push(
           `MATCH (superset:NostrEvent {uuid: '${esc(uuid)}'}) ` +
@@ -244,7 +245,7 @@ export async function importToNeo4j(events, opts = {}) {
           `WHERE (header:ListHeader OR header:ListItem) ` +
           `AND toLower(namesTag.value1) = toLower('${esc(plural)}') ` +
           `AND header.pubkey = '${clean.pubkey}' ` +
-          `SET header:ClassThreadHeader ` +
+          `SET header:ConceptHeader ` +
           `MERGE (header)-[:IS_THE_CONCEPT_FOR]->(superset)`
         );
       }

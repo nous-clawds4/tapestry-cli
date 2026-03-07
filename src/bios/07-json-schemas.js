@@ -7,7 +7,7 @@
  * that defines the structure of its elements (Rule 11).
  * 
  * The JSON Schema node sits at the root of the Property Tree Graph and is
- * wired to the ClassThreadHeader via IS_THE_JSON_SCHEMA_FOR.
+ * wired to the ConceptHeader via IS_THE_JSON_SCHEMA_FOR.
  * 
  * CLI equivalent:
  *   tapestry concept create "JSON schema" --plural "JSON schemas" --slug jsonSchema

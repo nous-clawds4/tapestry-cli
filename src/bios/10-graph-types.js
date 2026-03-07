@@ -22,7 +22,7 @@ async function main() {
   await createConcept({
     name: 'graph type',
     plural: 'graph types',
-    description: 'The types of graphs associated with each concept: core nodes, class threads, and property tree.',
+    description: 'The types of graphs associated with each concept: core nodes, concept graph, and property tree.',
     slug: 'graphType',
   });
 }

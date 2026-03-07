@@ -4,7 +4,7 @@
  * BIOS Script 11: Graphs
  * 
  * Creates the "graph" concept. Every concept skeleton includes 3 graph
- * instances (core nodes, class threads, property tree), and each is an
+ * instances (core nodes, concept graph, property tree), and each is an
  * element of this concept.
  * 
  * Graph nodes carry a `json` tag with a graph structure:
