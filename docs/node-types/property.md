@@ -8,7 +8,7 @@ Property
   "word": {
     "slug": "",
     "name": "",
-    "title": "A",
+    "title": "",
     "wordTypes": ["word", "property"]
   },
   "property": {
