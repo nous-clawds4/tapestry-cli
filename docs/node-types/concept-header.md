@@ -49,6 +49,7 @@ The above file should validate against the JSON schema within the file below (wi
         "slug": "json-schema-for-concept-header",
         "title": "JSON Schema for Concept Header",
         "name": "JSON Schema for concept header",
+        "name": "This is the JSON Schema for the concept of concept headers. Every element of this concept must validate against this JSON schema.",
         "description": "",
         "wordTypes": [
             "word",
