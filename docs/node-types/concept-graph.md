@@ -101,6 +101,7 @@ The above file should validate against the JSON schema within the file below (wi
         "required": [
             "conceptGraph"
         ],
+        "definitions": {},
         "properties": {
             "conceptGraph": {
                 "type": "object",
