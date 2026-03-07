@@ -3,8 +3,8 @@ Coffee House
 
 ## Example of a Coffee House
 
-- the `foo bar` for the concept of `coffee houses`
-
+- `Metropolis Coffee Company` is an example of a `coffee house`
+  
 ```json
 {
   "word": {
