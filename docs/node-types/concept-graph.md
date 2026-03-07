@@ -19,24 +19,25 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
   "graph": {
     "nodes": [
       {
-        "slug": "",
+        "slug": "concept-header-for-the-concept-of-coffee-houses",
+        "uuid": "<uuid>"
+      },
+      {
+        "slug": "superset-for-the-concept-of-coffee-houses",
         "uuid": "<uuid>"
       }
     ],
     "relationshipTypes": [
       {
         "slug": "IS_THE_CONCEPT_FOR",
-        "alias": "class thread initiation",
         "uuid": "<uuid>"
       },
       {
         "slug": "IS_A_SUPERSET_OF",
-        "alias": "class thread propagation",
         "uuid": "<uuid>"
       },
       {
         "slug": "HAS_ELEMENT",
-        "alias": "class thread termination",
         "uuid": "<uuid>"
       }
     ],
