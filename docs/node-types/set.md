@@ -17,7 +17,8 @@ Note: a Set is **not** one of the 8 [core nodes](../glossary/core-nodes.md). Cor
     "slug": "a-set-of-coffee-houses",
     "name": "a set of coffee houses",
     "title": "A Set of Coffee Houses",
-    "wordTypes": ["word", "set"]
+    "wordTypes": ["word", "set"],
+    "coreMemberOf": [ {"slug": "concept-header-for-the-concept-of-sets", "uuid": "<uuid>"} ]
   },
   "set": {
     "slug": "london-coffee-houses",
@@ -42,6 +43,12 @@ The above file should validate against the JSON schema within the file below (wi
         "wordTypes": [
             "word",
             "jsonSchema"
+        ],
+        "coreMemberOf": [
+            {
+                "slug": "concept-header-for-the-concept-of-sets",
+                "uuid": "<uuid>"
+            }
         ]
     },
     "jsonSchema": {

@@ -11,7 +11,8 @@ Coffee House
     "slug": "coffee-house--metropolis-coffee-company",
     "name": "coffee house: Metropolis Coffee Company",
     "title": "Coffee House: Metropolis Coffee Company",
-    "wordTypes": ["word", "coffeeHouse"]
+    "wordTypes": ["word", "coffeeHouse"],
+    "coreMemberOf": [ {"slug": "concept-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
   },
   "coffeeHouse": {
     "slug": "metropolis-coffee-company",
@@ -54,6 +55,12 @@ The above file should validate against the JSON schema within the file below (wi
         "wordTypes": [
             "word",
             "jsonSchema"
+        ],
+        "coreMemberOf": [
+            {
+                "slug": "concept-header-for-the-concept-of-coffee-houses",
+                "uuid": "<uuid>"
+            }
         ]
     },
     "jsonSchema": {

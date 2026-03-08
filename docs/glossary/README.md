@@ -2,10 +2,12 @@
 
 > Canonical definitions for the tapestry protocol. When in doubt, this is the authority.
 
-## Primitives
+## Node Types
 
-- [**Word**](./word.md) — any JSON node in the concept graph
+- [**Node Type**](./node-type.md) — what kind of content a node points to (word, image, etc.)
+- [**Word**](./word.md) — a node whose content is structured JSON data
 - [**Word Type**](./word-type.md) — a classification assigned to a word
+- [**Image**](./image.md) — a node whose content is a binary image file
 
 ## Identity & Naming Conventions
 
@@ -52,6 +54,15 @@
 - [**Concept Graph**](./concept-graph.md) — all nodes and edges of a concept's class threads
 - [**Tapestry**](./tapestry.md) — union of many concept graphs; validates against normalization rules
 
+## Relationships
+
+- [**Relationship**](./relationship.md) — a directed edge between two nodes (nostr event + Neo4j edge)
+- [**Relationship Type**](./relationship-type.md) — the semantic meaning of a relationship (IS_THE_CONCEPT_FOR, HAS_ELEMENT, etc.)
+
+## Validation
+
+- [**Validation Tool**](./validation-tool.md) — a node that defines how to validate elements of a concept
+
 ## Higher-Level Concepts
 
 - [**Normalization**](./normalization.md) — rules ensuring the concept graph is well-formed
@@ -59,4 +70,4 @@
 
 ---
 
-*Last updated: 2026-03-06*
+*Last updated: 2026-03-08*

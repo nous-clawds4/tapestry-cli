@@ -11,7 +11,8 @@ JSON Data Type
     "slug": "json-data-type--object",
     "name": "JSON data type: object",
     "description": "the json data type: object",
-    "wordTypes": ["word", "jsonDataType"]
+    "wordTypes": ["word", "jsonDataType"],
+    "coreMemberOf": [ {"slug": "concept-header-for-the-concept-of-json-data-types", "uuid": "<uuid>"} ]
   },
   "jsonDataType": {
     "name": "object",
@@ -37,6 +38,12 @@ The above file should validate against the JSON schema within the file below (wi
         "wordTypes": [
             "word",
             "jsonSchema"
+        ],
+        "coreMemberOf": [
+            {
+                "slug": "concept-header-for-the-concept-of-json-data-types",
+                "uuid": "<uuid>"
+            }
         ]
     },
     "jsonSchema": {

@@ -124,7 +124,8 @@ This is the JSON Schema for the concept of `JSON schemas` — i.e., the schema t
     "title": "JSON Schema for the Concept of JSON Schemas",
     "name": "JSON Schema for the concept of json schemas",
     "description": "This is the JSON Schema for elements of the concept of json schemas. Every element of this concept must validate against this JSON schema.",
-    "wordTypes": ["word", "jsonSchema"]
+    "wordTypes": ["word", "jsonSchema"],
+    "coreMemberOf": [ {"slug": "concept-header-for-the-concept-of-json-schemas", "uuid": "<uuid>"} ]
   },
   "jsonSchema": {
     "name": "json schema",

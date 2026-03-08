@@ -32,7 +32,8 @@ Top-level properties connect to the JSON Schema node. Nested properties connect 
     "name": "address",
     "title": "Address",
     "description": "The physical address of the coffee house",
-    "wordTypes": ["word", "property"]
+    "wordTypes": ["word", "property"],
+    "coreMemberOf": [ {"slug": "concept-header-for-the-concept-of-properties", "uuid": "<uuid>"} ]
   },
   "property": {
     "key": "address",
@@ -105,6 +106,12 @@ The above file should validate against the JSON schema within the file below (wi
         "wordTypes": [
             "word",
             "jsonSchema"
+        ],
+        "coreMemberOf": [
+            {
+                "slug": "concept-header-for-the-concept-of-properties",
+                "uuid": "<uuid>"
+            }
         ]
     },
     "jsonSchema": {
