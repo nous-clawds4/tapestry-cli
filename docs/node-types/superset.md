@@ -13,8 +13,14 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
     "slug": "superset-for-the-concept-of-coffee-houses",
     "name": "superset for the concept of coffee houses",
     "title": "Superset for the Concept of Coffee Houses",
-    "wordTypes": ["word", "superset"],
+    "wordTypes": ["word", "set", "superset"],
     "coreMemberOf": [ {"slug": "concept-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
+  },
+  "set": {
+    "name": "coffee houses",
+    "title": "Coffee Houses",
+    "slug": "coffee-houses",
+    "description": "This is a set of coffee houses."
   },
   "superset": {
     "name": "coffee houses",
@@ -34,9 +40,9 @@ The above file should validate against the JSON schema within the file below (wi
 ```json
 {
     "word": {
-        "slug": "json-schema-for-superset",
-        "title": "JSON Schema for Superset",
-        "name": "JSON Schema for superset",
+        "slug": "json-schema-for-the-concept-of-supersets",
+        "title": "JSON Schema for the Concept of Supersets",
+        "name": "JSON Schema for the concept of supersets",
         "description": "",
         "wordTypes": [
             "word",
@@ -46,7 +52,7 @@ The above file should validate against the JSON schema within the file below (wi
     "jsonSchema": {
         "name": "superset",
         "title": "Superset",
-        "$schema": "http://json-schema.org/schema",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "definitions": {},
         "type": "object",
         "required": [

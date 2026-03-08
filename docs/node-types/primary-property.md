@@ -1,7 +1,11 @@
 Primary Property
 =====
 
-The **primary property** is the base of the `property tree` for a concept (e.g., the concept of `coffee houses`). It connects directly to the `JSON schema` of that concept. It is both a **property** and one of the core nodes of a concept (**primaryProperty**), so its JSON has three top-level sections.
+The **primary property** is the root of the [property tree](./property-tree-graph.md) for a concept. It connects directly to the concept's [JSON Schema](./json-schema.md) node via `IS_A_PROPERTY_OF` and defines the top-level wrapper key (e.g., `coffeeHouse`) under which all element data is structured.
+
+It is one of the 8 [core nodes](../glossary/core-nodes.md). For the conceptual definition, see the [glossary entry](../glossary/primary-property.md).
+
+The primary property is both a **property** and a **primaryProperty**, so its JSON has three top-level sections: `word`, `property`, and `primaryProperty`. The `property` section is validated by the [JSON Schema for the concept of properties](./property.md); the `primaryProperty` section is validated by the meta-schema below.
 
 ## Example of a Primary Property
 
@@ -14,6 +18,7 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
   "word": {
     "slug": "primary-property-for-the-concept-of-coffee-houses",
     "name": "primary property for the concept of coffee houses",
+    "title": "Primary Property for the Concept of Coffee Houses",
     "description": "the primary property for the concept of coffee houses",
     "wordTypes": ["word", "property", "primaryProperty"],
     "coreMemberOf": [ {"slug": "concept-header-for-the-concept-of-coffee-houses", "uuid": "<uuid>"} ]
@@ -27,18 +32,24 @@ It is one of the 8 `core nodes` for the concept of `coffee houses`.
       "name": { "type": "string" },
       "slug": { "type": "string" },
       "description": { "type": "string" }
-    },
-    "x-tapestry": {
-      "unique": ["name", "slug"],
-      "defaults": {
-        "required": ["name", "slug", "description"]
-      }
     }
   },
   "primaryProperty": {
+    "description": "the primary property for the concept of coffee houses"
   }
 }
 ```
+
+### The `property` section as JSON Schema fragment
+
+The `property` section is designed to be a **valid JSON Schema fragment**. The `key` field (`"coffeeHouse"`) becomes the property name in the parent schema, and the rest can be slotted directly into the concept's JSON Schema. This is how the JSON Schema is [assembled from the property tree](./json-schema.md#how-the-json-schema-is-built).
+
+### The naming convention connection
+
+The primary property's `key` is derived from the concept header's `oKeys.singular` (e.g., `coffeeHouse`). This key becomes:
+- The top-level property name in the JSON Schema
+- The wrapper key in every element's JSON (e.g., `{ "coffeeHouse": { "name": "Metropolis", ... } }`)
+- The `title` comes from `oTitles.singular`
 
 ## JSON Schema node
 
@@ -52,7 +63,7 @@ The above file should validate against the JSON schema within the file below (wi
         "slug": "json-schema-for-the-concept-of-primary-properties",
         "title": "JSON Schema for the Concept of Primary Properties",
         "name": "JSON Schema for the concept of primary properties",
-        "description": "",
+        "description": "This is the JSON Schema for elements of the concept of primary properties. Every element of this concept must validate against this JSON schema.",
         "wordTypes": [
             "word",
             "jsonSchema"
@@ -61,7 +72,7 @@ The above file should validate against the JSON schema within the file below (wi
     "jsonSchema": {
         "name": "primary property",
         "title": "Primary Property",
-        "$schema": "http://json-schema.org/schema",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "definitions": {},
         "type": "object",
         "required": [
@@ -72,16 +83,20 @@ The above file should validate against the JSON schema within the file below (wi
                 "type": "object",
                 "name": "primary property",
                 "title": "Primary Property",
-                "slug": "",
-                "alias": "",
-                "description": "",
+                "slug": "primary-property",
+                "description": "data about this primary property",
                 "required": [
-
+                    "description"
                 ],
-                "unique": [
-
-                ],
+                "unique": [],
                 "properties": {
+                    "description": {
+                        "type": "string",
+                        "name": "description",
+                        "title": "Description",
+                        "slug": "description",
+                        "description": "A description of this primary property"
+                    }
                 }
             }
         }
@@ -91,124 +106,28 @@ The above file should validate against the JSON schema within the file below (wi
 
 ## Design Decisions
 
-### 1. Three-Layer Structure: `word` → `primaryProperty` → `property`
+### Three-Layer Structure: `word` → `property` → `primaryProperty`
 
 The JSON mirrors the type hierarchy. Every primary property **is a** property, and every property **is a** word. Code can always find `word` on any node, then inspect `word.wordTypes` to know which other sections to expect.
 
-**Implication:** A regular property node would have `{ word, property }`. An element would have `{ word, element }`. A node that serves multiple roles (e.g., an element that is also a property) would have `{ word, element, property }`. The pattern is additive.
+**Implication:** A regular property node has `{ word, property }`. A primary property has `{ word, property, primaryProperty }`. The pattern is additive — each word type adds a section.
 
-### 2. Identity Lives in `word` Only
+### Identity Lives in `word` Only
 
-`name` and `description` appear **only** in the `word` section. Other sections reference additional semantics but don't repeat identity fields. This avoids sync issues where `word.name` says one thing and `property.name` says another.
+`name` and `description` appear in the `word` section. Other sections contain domain-specific semantics but don't repeat identity fields. This avoids sync issues where `word.name` says one thing and another section says something different.
 
-### 3. Slug: Kebab-Case, No Hash Suffix
+### `coreMemberOf` for Back-References
 
-Slugs use kebab-case (`primary-property-for-the-coffee-house-concept`) because they're human-readable identifiers, potentially useful in URLs. CamelCase is reserved for programmatic keys.
+The `word.coreMemberOf` array provides back-pointers to the concept header this node belongs to. This is the standard mechanism for all core nodes to reference their parent concept.
 
-**Uniqueness:** Slugs should be practically unique through descriptive naming rather than appended hashes. If collisions occur in practice, a short hash suffix (e.g., `-a3f7`) can be added, but start without one. The `uuid` (a-tag) is the true unique identifier.
+### Slug Convention
 
-### 4. `conceptRef` Instead of `coreNodeOf`
+Slugs use kebab-case (`primary-property-for-the-concept-of-coffee-houses`) for human readability. CamelCase is reserved for programmatic keys (like `property.key`). The `uuid` (a-tag) is the true unique identifier; slugs should be practically unique through descriptive naming.
 
-The `primaryProperty` section contains a back-pointer to the concept this property belongs to. Named `conceptRef` rather than `coreNodeOf` because:
-- `coreNodeOf` is ambiguous — there are 7 core node types, and this relationship is specifically "I am the primary property **of this concept**"
-- `conceptRef` is clear and generic enough to reuse on other node types that need to point back to their parent concept
+### No Redundant Role in `property`
 
-Contains both `slug` (human-readable) and `uuid` (machine-resolvable) for the class thread header node.
+The node's roles are declared in `word.wordTypes` — single source of truth. The `property` section doesn't need a `role` field.
 
-### 5. `property` Section as JSON Schema Fragment
+### No `uuid` Inside the JSON
 
-The `property` section is designed to be a **valid JSON Schema fragment**. You can extract it and slot it directly into a parent schema:
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "coffeeHouse": {
-      "type": "object",
-      "title": "Coffee House",
-      "required": ["name", "slug", "description"],
-      "properties": {
-        "name": { "type": "string" },
-        "slug": { "type": "string" },
-        "description": { "type": "string" }
-      }
-    }
-  }
-}
-```
-
-This means the concept's JSON Schema can be **assembled** from its property nodes rather than maintained as a separate artifact. The `key` field (`"coffeeHouse"`) becomes the property name in the parent schema.
-
-### 6. Tapestry Extensions: `x-tapestry`
-
-Domain-specific metadata that doesn't belong in standard JSON Schema lives under `x-tapestry`, following the OpenAPI `x-` extension convention:
-
-- **`unique`**: which sub-properties should be unique across elements (no JSON Schema equivalent)
-- **`defaults.required`**: the default required fields for new concepts (may be overridden per-concept)
-
-### 7. No `role` in `property` Section
-
-Dave's original proposal included `role: "primaryProperty"` inside the `property` section. This is redundant with `word.wordTypes` which already declares the node's roles. Single source of truth: `wordTypes` is the authority.
-
-### 8. No `uuid` Inside the JSON
-
-The uuid (a-tag: `kind:pubkey:d-tag`) is derivable from the event envelope itself. Storing it inside the JSON content would be circular for the node's own identity. It *is* included in `conceptRef` because that's a reference to a **different** event.
-
-### 9. Neo4j Label: Not Here
-
-Dave's original proposal included a `label` field (`{ name: "CoffeeHouse", required: false }`) for the Neo4j node label. This belongs on the **class thread header** node, not the primary property — the label is a property of the concept itself, not of its primary property. The primary property's `key` happens to match the label name, but the label assignment decision is conceptual.
-
-## Open Questions
-
-- **Should `word.wordTypes` include `"word"` explicitly?** It's always present, so it's technically redundant. But being explicit makes the contract clearer and costs nothing.
-- **Sub-properties as separate property nodes?** In this sample, `name`, `slug`, and `description` appear inline. Should they be references to their own property nodes instead? That would enable reuse (the `name` property is the same across many concepts) but adds complexity.
-- **`title` in `property` vs `word`?** Currently `title` appears in `property` (as PascalCase display name / Neo4j label candidate) but not in `word`. Should `word` have an optional `title` field too?
-- **Default sub-properties:** Every primary property starts with `name`, `slug`, `description`. Should these be hardcoded defaults or configurable per-concept from the start?
-
-## Dave's Original Proposal (for reference)
-
-<details>
-<summary>Click to expand</summary>
-
-```js
-{
-  word: {
-    slug: "primary-property-for-the-coffee-house-concept",
-    title: "",
-    name: "primary property for the coffee house concept",
-    description: "primary property for the coffee house concept",
-    wordTypes: ["word", "primaryProperty", "property"],
-    metaData: {
-      uuid: "<>"
-    }
-  },
-  primaryProperty: {
-    name: "primary property for the coffee house concept",
-    coreNodeOf: {
-      slug: "coffeeHouse",
-      uuid: "<foo>"
-    },
-    label: {
-      name: "CoffeeHouse",
-      required: false
-    }
-  },
-  property: {
-    key: "coffeeHouse",
-    type: "object",
-    name: "coffee house",
-    title: "Coffee House",
-    role: "primaryProperty",
-    required: ["name", "slug", "description"],
-    unique: ["name", "slug"],
-    properties: {
-      name: { type: "string", name: "name" },
-      slug: { type: "string", name: "slug" },
-      description: { type: "string", name: "description" }
-    },
-    description: "the primary property for the coffee house concept"
-  }
-}
-```
-
-</details>
+The uuid (a-tag: `kind:pubkey:d-tag`) is derivable from the event envelope. Storing it inside the JSON content would be circular. It *is* included in `coreMemberOf` because that references a **different** event.

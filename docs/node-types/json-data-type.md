@@ -45,7 +45,7 @@ The above file should validate against the JSON schema within the file below (wi
         "name": "json data type",
         "title": "JSON Data Type",
         "description": "data about this json data type",
-        "$schema": "http://json-schema.org/schema",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "required": [
             "jsonDataType"
         ],

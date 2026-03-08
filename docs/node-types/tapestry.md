@@ -1,20 +1,45 @@
 Tapestry
 =====
 
-## Sample JSON
+A tapestry is a `graph` that validates against the *normalization rules* of the tapestry protocol.
+
+## Examples of a `Tapestry`
+
+### The tapestry for the Grapevine
 
 ```json
 {
   "word": {
-    "slug": "",
+    "slug": "tapestry--grapevine",
     "name": "",
     "title": "",
-    "wordTypes": ["word", "set", "tapestry"]
+    "wordTypes": ["word", "graph", "tapestry"]
   },
-  "": {
+  "graph": {
+    "nodes": [
+        {
+            "slug": "concept-graph-for-the-concept-of-ratings",
+            "uuid": "<uuid>"
+        }
+    ],
+    "relationshipTypes": [],
+    "relationships": [],
+    "imports": [
+        {
+            "slug": "tapestry--bios",
+            "uuid": "<uuid>"
+        }
+    ]
+  },
+  "tapestry": {
+    "slug": "grapevine",
+    "title": "Grapevine",
+    "desciption": "this is the collection of all concepts that are integral to using the Grapevine"
   }
 }
 ```
+
+### The Tapestry for the BIOS underlying the tapestry protocol
 
 ## JSON Schema node
 
@@ -37,7 +62,7 @@ The above file should validate against the JSON schema within the file below (wi
     "jsonSchema": {
         "name": "",
         "title": "",
-        "$schema": "http://json-schema.org/schema",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "definitions": {},
         "type": "object",
         "required": [
