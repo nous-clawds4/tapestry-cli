@@ -1,6 +1,6 @@
 # Wrapped Data
 
-A node or relationship is **wrapped** when it has a corresponding nostr event — a kind 39998 or 39999 event that packages the entity with a pubkey, signature, event id, and tags. A **wrapped** entity is independently addressable on the nostr network: it can be subscribed to, verified, and relayed.
+A node or relationship is **wrapped** when it has a corresponding nostr event — a kind 9998, 9999, 39998 or 39999 event that packages the entity with a pubkey, signature, event id, and tags. A **wrapped** entity is independently addressable on the nostr network: it can be subscribed to, verified, and relayed.
 
 An **unwrapped** node or relationship has no corresponding nostr event. It exists only as local data (e.g., a Neo4j node or edge) or as content embedded within another event (e.g., nodes listed inside a [graph](./concept-graph.md) event's JSON).
 
@@ -19,7 +19,7 @@ By allowing relationships (and potentially nodes) to be unwrapped, the protocol 
 
 Infinite recursion avoidance is the architectural necessity, but there are many practical reasons to leave data unwrapped:
 
-- **Privacy** — not every piece of local data belongs on a public relay
+- **Privacy** — not every piece of local data belongs on a nostr relay
 - **Ephemeral data** — temporary or intermediate computations
 - **Derived data** — edges inferred from structure (e.g., `HAS_TAG` edges derived from event tags)
 - **Efficiency** — wrapping every edge would bloat the event count with minimal benefit
