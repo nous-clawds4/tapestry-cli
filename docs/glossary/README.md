@@ -59,6 +59,10 @@
 - [**Relationship**](./relationship.md) — a directed edge between two nodes (nostr event + Neo4j edge)
 - [**Relationship Type**](./relationship-type.md) — the semantic meaning of a relationship (IS_THE_CONCEPT_FOR, HAS_ELEMENT, etc.)
 
+## Data Architecture
+
+- [**Wrapped Data**](./wrapped-data.md) — the distinction between entities backed by a nostr event (wrapped) and those that exist only locally or embedded in other events (unwrapped)
+
 ## Validation
 
 - [**Validation Tool**](./validation-tool.md) — a node that defines how to validate elements of a concept

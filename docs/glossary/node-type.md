@@ -30,6 +30,10 @@ The pattern generalizes to any content type: video, audio, 3D models, etc. Each 
 
 JSON Schemas and Image Validation Scripts are both forms of validation tooling. They can be unified under a concept of "Validation Tools," where the superset of JSON Schemas and the superset of Image Validation Scripts are both subsets of the superset of Validation Tools. This demonstrates that the protocol's own meta-concepts form the same class thread structures as user-created concepts.
 
+## Wrapped and Unwrapped Nodes
+
+Like [relationships](./relationship.md), nodes may be [**wrapped**](./wrapped-data.md) (backed by a dedicated nostr event) or [**unwrapped**](./wrapped-data.md) (existing only as a Neo4j node or as data embedded within a graph event). Most concept nodes today are wrapped, but the protocol does not require it — see [wrapped data](./wrapped-data.md) for the full rationale.
+
 ## The Map, Not the Territory
 
 A node is always a *map* — it points to content, it does not *contain* it. For words, the JSON data may currently live inside Neo4j (as a `NostrEventTag` value), but the architecture supports external storage with pointers. For images, the content is always external. This distinction keeps the graph lightweight and the storage flexible.
