@@ -20,6 +20,8 @@ Just as Nakamoto consensus solved the Byzantine Generals Problem and paved the w
 
 ## Core Insight
 
+The core insight of the tapestry protocol is that the design of the personalized database of an *individual* must take into account the need of the individual to learn from one's trusted community. And the best way to do this is for the database to be a graph database (aka a knowledge graph) organized using the class threads, and for decentralize curation to occur using the principle of the grapevine. 
+
 **The curation of a simple list by one's web of trust is the atomic unit of the decentralized web.**
 
 Everything else — categories, schemas, concepts, ontologies — is built up from this one primitive operation: a group of people, weighted by trust, collaboratively curating a list. This operation is called **DCoSL** (Decentralized Curation of Simple Lists).
