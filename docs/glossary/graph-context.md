@@ -19,9 +19,9 @@ The primary function of the tapestry protocol is for entities to learn from and 
 **Selective sharing** is fundamental. If Alice wants to share her dog Spot as a sheep dog, she sends `word` + `sheepDog`. She does *not* need to include the `dog`, `animal`, or `organism` blocks — Bob can infer those from his own concept graph. And she certainly strips `graphContext`, because her element lists, set memberships, and schema assignments are artifacts of *her* topology.
 
 This means:
-1. **`word`** is always shared (universal identity)
+1. **`word`** is typically shared (universal identity)
 2. **Concept-scoped blocks** are shared at the sender's discretion (selective context)
-3. **`graphContext`** is never shared (local-only, stripped before export)
+3. **`graphContext`** is typically not shared (local-only, stripped before export)
 
 ## What Goes in `graphContext`
 
@@ -100,55 +100,98 @@ Validation results are cached here for performance but are **not authoritative**
 
 ## Full Example
 
-A Set node for "border collie" within the concept "dog":
+The Superset node for the concept of "border collies":
 
 ```json
 {
   "word": {
-    "slug": "border-collie",
-    "name": "border collie",
-    "description": "A highly intelligent herding breed.",
-    "wordTypes": ["word", "set"]
+    "slug": "the-superset-for-the-concept-of-border-collies",
+    "name": "the superset for the concept of border collies",
+    "wordTypes": ["word", "superset", "set"],
+    "coreMemberOf": [
+      {
+        "slug": "concept-header-for-the-concept-of-border-collies",
+        "uuid": "39998:abcde12345...:border-collies"
+      }
+    ]
   },
-  "dog": {
-    "averageLifespan": 14,
-    "coatType": "double"
+  "superset": {
+    "slug": "superset-for-the-concept-of-border-collies",
+    "name": "superset fot the concept of border collies"
+  },
+  "set": {
+    "slug": "border-collies",
+    "name": "border collies"
   },
   "graphContext": {
     "identifiers": {
-      "tapestryKey": "39998:e527...:border-collie"
+      "uuid": "39998:e527...:border-collie",
+      "tapestryKey": "abcde12345..."
     },
-    "concept": {
-      "tapestryKey": "39998:e527...:dog",
-      "name": "dog"
+    "parentSets": {
+      "direct": [
+        {
+          "tapestryKey": "abcde12345...",
+          "name": "herding dogs"
+        },
+        {
+          "tapestryKey": "abcde12345...",
+          "name": "dogs"
+        }
+      ],
+      "indirect": [
+        {
+          "tapestryKey": "abcde12345...",
+          "name": "animals"
+        },
+        {
+          "tapestryKey": "abcde12345...",
+          "name": "organisms"
+        }
+      ]
     },
-    "memberOf": [
-      {
-        "tapestryKey": "39998:e527...:sheep-dog",
-        "name": "sheep dog"
-      }
-    ],
-    "parentSets": [
-      {
-        "tapestryKey": "39998:e527...:herding-dogs",
-        "name": "herding dogs"
-      }
-    ],
-    "childSets": [],
+    "childSets": {
+      "direct": [],
+      "indirect": []
+    },
     "elements": {
       "direct": [
-        { "tapestryKey": "39998:e527...:lassie", "name": "lassie", "slug": "lassie" }
+        { "tapestryKey": "abcde12345...", "name": "Spot", "slug": "spot" }
       ],
-      "all": [
-        { "tapestryKey": "39998:e527...:lassie", "name": "lassie", "slug": "lassie" }
+      "indirect": [
+        { "tapestryKey": "abcde12345...", "name": "Lassie", "slug": "lassie" }
+      ]
+    },
+    "elementOf": {
+      "direct": [
+        { "tapestryKey": "abcde12345...", "name": "superset", "slug": "superset" }
       ],
-      "counts": { "direct": 1, "all": 1 }
+      "indirect": [
+        { "tapestryKey": "abcde12345...", "name": "word", "slug": "word" },
+        { "tapestryKey": "abcde12345...", "name": "set", "slug": "set" }
+      ]
     },
     "parentJsonSchemas": [
       {
-        "tapestryKey": "39998:e527...:json-schema-for-dog",
-        "conceptName": "dog",
-        "conceptTapestryKey": "39998:e527...:dog",
+        "uuid": "39998:e123...:json-schema-for-the-concept-of-words",
+        "conceptName": "word",
+        "tapestryKey": "063588e3-...",
+        "lastValidated": 1711300000,
+        "valid": true,
+        "errors": []
+      },
+      {
+        "uuid": "39998:e527...:json-schema-for-the-concept-of-supersets",
+        "conceptName": "superset",
+        "tapestryKey": "abcd1234-...",
+        "lastValidated": 1711300000,
+        "valid": true,
+        "errors": []
+      },
+      {
+        "uuid": "39998:e527...:json-schema-for-the-concept-of-sets",
+        "conceptName": "set",
+        "tapestryKey": "abcd1234-...",
         "lastValidated": 1711300000,
         "valid": true,
         "errors": []
