@@ -91,6 +91,10 @@ The protocol avoids this infinite regress by design. Implicit relationships are 
 - **Do not expect** a nostr event to exist for every relationship in the Neo4j graph.
 - **Do not create** relationship events unless the relationship has editorial significance.
 - When checking normalization, the absence of a relationship event is normal — check for the relationship *in the graph*, not for a corresponding event.
+
+#### Relationship to duality
+
+The implicit/explicit distinction is one facet of a broader principle: **[duality](glossary/duality.md)** — the same data can be represented both in graph topology and in serialized documents. Implicit relationships encode meaning in the *shape* of the graph; serialized representations (JSON Schemas, element lists) encode the same meaning in *files* for performance and portability. See the [duality glossary entry](glossary/duality.md) for the full treatment.
 - The `tapestry normalize` commands operate on graph-level relationships, not on relationship events.
 
 ---

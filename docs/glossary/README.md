@@ -71,6 +71,7 @@
 
 - [**Normalization**](./normalization.md) — rules ensuring the concept graph is well-formed
 - [**Loose Consensus**](./loose-consensus.md) — decentralized convergence on shared lists via Web of Trust
+- [**Duality**](./duality.md) — the same data represented both in graph topology and in serialized documents
 
 ---
 
