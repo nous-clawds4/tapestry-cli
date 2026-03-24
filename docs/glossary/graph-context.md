@@ -4,21 +4,30 @@ The `graphContext` property is a top-level sibling of `word` inside a node's [ta
 
 ## The Separation Principle
 
-Every tapestryJSON has (at minimum) two top-level sections:
+Every tapestryJSON has (at minimum) two top-level sections, and may have more:
 
-- **`word`** — *What this thing IS.* Portable, self-contained data that makes sense on its own. Name, slug, description, properties, schema content. This is what you share with peers by wrapping it in a nostr event.
+- **`word`** — *What this thing IS.* Portable, self-contained identity data: name, slug, description, wordTypes. Always shared.
 
-- **`graphContext`** — *Where this thing SITS in my graph.* Local metadata that describes the node's relationships, memberships, schema validation status, and identifiers within a specific tapestry instance.
+- **`<conceptSlug>`** — *What this thing IS in the context of a specific concept.* Concept-scoped data blocks, keyed by the concept's slug (e.g., `sheepDog`, `dog`, `animal`). Each block contains properties specific to that concept's schema. **Optionally shared** — the sender chooses which concept contexts to include.
+
+- **`graphContext`** — *Where this thing SITS in my graph.* Local metadata describing the node's relationships, memberships, element lists, schema validation status, and identifiers. **Never shared** — stripped before packaging into a nostr event.
+
+### Why Three Tiers?
 
 The primary function of the tapestry protocol is for entities to learn from and communicate with their trusted peers. Peers share data in the form of tapestryJSON files, packaged inside nostr events. But the tapestryJSON stored locally and the JSON shared on the network are not always the same — because Alice's concept graph and Bob's concept graph are virtually never structured identically.
 
-If Alice wants to share the concept of "Sheep Dog," she should be able to do so without necessarily sharing a list of every Sheep Dog in her graph. The data inside `graphContext` is the data that you **strip away** before packaging a tapestryJSON into a nostr event. It is local to your graph, frequently updated, and non-portable.
+**Selective sharing** is fundamental. If Alice wants to share her dog Spot as a sheep dog, she sends `word` + `sheepDog`. She does *not* need to include the `dog`, `animal`, or `organism` blocks — Bob can infer those from his own concept graph. And she certainly strips `graphContext`, because her element lists, set memberships, and schema assignments are artifacts of *her* topology.
+
+This means:
+1. **`word`** is always shared (universal identity)
+2. **Concept-scoped blocks** are shared at the sender's discretion (selective context)
+3. **`graphContext`** is never shared (local-only, stripped before export)
 
 ## What Goes in `graphContext`
 
 The guiding question: *"Would this data still make sense if I sent it to someone with a different graph?"*
 
-- **Yes** → it belongs in `word` (or a type-specific section like `set`, `superset`, `property`)
+- **Yes** → it belongs in `word` or a concept-scoped block
 - **No** → it belongs in `graphContext`
 
 The philosophy of `graphContext` is **verbose for performance**. The tradeoff: in exchange for verbosity, we make it maximally easy to look up data that is needed frequently or requires high performance. Graph traversals are powerful but expensive; caching their results in `graphContext` means most reads hit LMDB instead of Neo4j.
@@ -31,7 +40,13 @@ The philosophy of `graphContext` is **verbose for performance**. The tradeoff: i
 | `identifiers.tapestryKey` | string | The node's permanent tapestryKey (LMDB key) |
 | `concept` | object \| null | The parent concept this node belongs to (via class thread) |
 | `memberOf` | array | Sets that contain this node as a direct element (reverse HAS_ELEMENT) |
-| `parentJsonSchemas` | array | JSON Schemas this node should validate against, with cached validation results |
+| `parentSets` | array | Sets that this node is a direct subset of (reverse IS_A_SUPERSET_OF) |
+| `childSets` | array | Sets that are direct subsets of this node (forward IS_A_SUPERSET_OF) |
+| `elements` | object | Elements of this node: `direct`, `all`, and `counts` |
+| `elements.direct` | array | Elements connected by direct HAS_ELEMENT |
+| `elements.all` | array | All elements reachable via class thread (recursive) |
+| `elements.counts` | object | `{ direct, all }` — element counts for quick display |
+| `parentJsonSchemas` | array | JSON Schemas this node should validate against, with cached validation |
 | `derivedAt` | number | Unix timestamp of the last derivation |
 
 ### `identifiers`
@@ -43,6 +58,23 @@ The philosophy of `graphContext` is **verbose for performance**. The tradeoff: i
 ```
 
 The `identifiers` object holds this node's own identifiers. Currently only `tapestryKey` is stored, but the structure allows for future additions (uuid, aTag, eventId, etc.) as needs arise.
+
+### `elements`
+
+```json
+"elements": {
+  "direct": [
+    { "tapestryKey": "39998:e527...:lassie", "name": "lassie", "slug": "lassie" }
+  ],
+  "all": [
+    { "tapestryKey": "39998:e527...:lassie", "name": "lassie", "slug": "lassie" },
+    { "tapestryKey": "39998:e527...:rex", "name": "rex", "slug": "rex" }
+  ],
+  "counts": { "direct": 1, "all": 2 }
+}
+```
+
+Element lists belong in `graphContext` because Alice's sheep dogs and Bob's sheep dogs are almost certainly different. When sharing the concept of "sheep dog," you share the *definition* (word + concept-scoped properties), not your personal curated list.
 
 ### `parentJsonSchemas`
 
@@ -62,7 +94,7 @@ The `identifiers` object holds this node's own identifiers. Currently only `tape
 Each entry provides everything needed without a follow-up lookup:
 - **Which schema** (`tapestryKey`) — direct reference to the JSON Schema node
 - **Which concept** (`conceptName`, `conceptTapestryKey`) — denormalized for display and tracing
-- **Cached validation** (`lastValidated`, `valid`, `errors`) — the result of validating this node's `word` data against the schema
+- **Cached validation** (`lastValidated`, `valid`, `errors`) — the result of validating this node's data against the schema
 
 Validation results are cached here for performance but are **not authoritative** — they reflect the state at `lastValidated` and may become stale when either the node's data or the schema changes. The UI can re-validate on demand.
 
@@ -78,17 +110,9 @@ A Set node for "border collie" within the concept "dog":
     "description": "A highly intelligent herding breed.",
     "wordTypes": ["word", "set"]
   },
-  "set": {
-    "slug": "border-collie",
-    "name": "border collie",
-    "elements": [
-      { "tapestryKey": "39998:e527...:lassie", "name": "lassie" }
-    ],
-    "directElements": [
-      { "tapestryKey": "39998:e527...:lassie", "name": "lassie" }
-    ],
-    "childSets": [],
-    "counts": { "directElements": 1, "allElements": 1, "childSets": 0 }
+  "dog": {
+    "averageLifespan": 14,
+    "coatType": "double"
   },
   "graphContext": {
     "identifiers": {
@@ -104,6 +128,22 @@ A Set node for "border collie" within the concept "dog":
         "name": "sheep dog"
       }
     ],
+    "parentSets": [
+      {
+        "tapestryKey": "39998:e527...:herding-dogs",
+        "name": "herding dogs"
+      }
+    ],
+    "childSets": [],
+    "elements": {
+      "direct": [
+        { "tapestryKey": "39998:e527...:lassie", "name": "lassie", "slug": "lassie" }
+      ],
+      "all": [
+        { "tapestryKey": "39998:e527...:lassie", "name": "lassie", "slug": "lassie" }
+      ],
+      "counts": { "direct": 1, "all": 1 }
+    },
     "parentJsonSchemas": [
       {
         "tapestryKey": "39998:e527...:json-schema-for-dog",
@@ -119,14 +159,15 @@ A Set node for "border collie" within the concept "dog":
 }
 ```
 
-## Sharing: What Gets Stripped
+## Sharing: The Three-Tier Model
 
 When packaging a tapestryJSON for a nostr event:
 
-1. **Keep:** `word`, type-specific sections (`set`, `superset`, `property`, etc.)
-2. **Strip:** `graphContext` entirely
+1. **Always include:** `word` — the universal identity
+2. **Selectively include:** concept-scoped blocks (`sheepDog`, `dog`, etc.) — sender's choice based on what context they want to share
+3. **Always strip:** `graphContext` — local graph metadata
 
-The recipient will compute their own `graphContext` when they import the data into their graph. Their concept structure, schema assignments, and set memberships will reflect *their* topology, not yours.
+The recipient computes their own `graphContext` when they import the data. Their element lists, set memberships, and schema assignments will reflect *their* topology, not yours. And they may derive additional concept-scoped blocks that exist in their graph but not yours — if Alice's tapestry has an "animal" concept with "dog" as a subset, she can derive an `animal` block for Spot even if you never sent one.
 
 ## Relationship to Duality
 
